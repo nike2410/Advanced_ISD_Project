@@ -11,7 +11,7 @@ body.dark-mode {
 }
 
 /* Button styles */
-#dark-mode-toggle {
+#dark-mode {
     position: fixed;
     top: 10px;
     right: 10px;
