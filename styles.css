@@ -18,3 +18,43 @@ body.dark-mode {
     padding: 10px;
     cursor: pointer;
 }
+
+h1 {
+    text-align: center;
+    font-weight: 700;
+    font-size: 50px;
+}
+
+p {
+    text-align: center;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+}
+
+.actions button {
+    padding: 8px 16px;
+    font-size: 30px;
+    border-radius: 10px;
+    background-color: #27ae60;
+    color: white;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(6, 140px);
+    grid-gap: 16px;
+    justify-content: center;
+}
+
+.card {
+    width: 140px;
+    height: 210px;
+    border-radius: 10px;
+    position: relative;
+
+}
