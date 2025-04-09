@@ -4,21 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced ISD Project</title>
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 
 <body>
     <button id="dark-mode">Activate Dark Mode</button>
     <h1>Welcome to the webpage of TriMy!</h1>
-    <p>This is a simple website hosted on GitHub Pages.</p>
-    <p>This site is still under construction, stay tuned for more</p>
-    <a href="statistics.html">View Statistics</a>
-    <h1>Memory Cards</h1>
-    <div class="grid-container"></div>
-    <p>Score: <span class="score"></span></p>
+    <p>This is a simple website hosted on PythonAnywhere</p>
+
+    <!-- create link to statistics page -->
+    <a href="static/statistics.html">View Statistics</a>
+
+
+    <!-- Restart button to start the game from scratch -->
     <div class="actions">
         <button onclick="restart()">Restart</button>
     </div>
-    <script src="script.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"> </script>
 </body>
 </html>
