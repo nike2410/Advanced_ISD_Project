@@ -10,6 +10,12 @@ fetch('/cards')
         createCards();
     });
 
+function startGame() {
+    
+
+}
+
+
 function createCards() {
     const gridContainer = document.querySelector('.grid-container');
     gridContainer.innerHTML = '';
