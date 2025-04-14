@@ -4,33 +4,41 @@ import os
 import uuid
 
 app = Flask(__name__,
-            template_folder='templates', # theoretically both those lines ure not necessary but i figured it works better this way
+            template_folder='templates',
             static_folder='static')
-app.secret_key = os.urandom(24) # generates the secret key for the session
+app.secret_key = os.urandom(24)  # generates the secret key for the session
 
-total_pairs = 8   # as we only have one game mode so far we use this constant
+total_pairs = 8  # as we only have one game mode so far we use this constant
+
 
 def create_cards():
-    #create list with cards, we want to have 16 cards - 8 paris
-    card_symbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] # this array of letters will be replaced by pictures - TODO
+    # Define the card symbols we'll use
+    card_symbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']  # will be replaced by pictures later
 
-    # create the different pairs
-    cards = card_symbols * 2
-    random.shuffle(card_symbols)
+    # Create pairs by duplicating each symbol
+    cards = []
+    for symbol in card_symbols:
+        cards.append(symbol)
+        cards.append(symbol)
 
-    """ create the cards and provide it ids and the states - needed later"""
-    card_pairs = []
-    for i, symbol in enumerate(card_symbols):
-        card_pairs.append({
+    # Shuffle the cards
+    random.shuffle(cards)
+
+    # Create card objects with necessary properties
+    card_objects = []
+    for i, symbol in enumerate(cards):
+        card_objects.append({
             'id': i,
             'symbol': symbol,
             'is_flipped': False,
-            'is_matched': False})
+            'is_matched': False
+        })
 
-    return card_pairs
+    return card_objects
+
 
 def start_new_game():
-    #new session id
+    # new session id
     game_id = str(uuid.uuid4())
 
     game_state = {
@@ -42,6 +50,7 @@ def start_new_game():
         'game_completed': False
     }
     return game_id, game_state
+
 
 # Routes
 @app.route('/')
@@ -56,6 +65,7 @@ def index():
     return render_template('index.html',
                            game_id=game_id,
                            game_state=game_state)
+
 
 @app.route('/new_game', methods=['POST'])
 def new_game():
@@ -153,11 +163,5 @@ def reset_flipped_cards():
 
     return jsonify({'success': True})
 
-
-#define the root file, not sure why pycharm isn't able to detect the file (?) TODO: check why
-@app.route("/")
-def home():
-  return render_template('index.html')
-
 if __name__ == "__main__":
-  app.run(debug=True)
+    app.run(debug=True)
