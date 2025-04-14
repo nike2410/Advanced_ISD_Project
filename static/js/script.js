@@ -1,71 +1,92 @@
-let cards = [];
-let flippedCards = [];
-let score = 0;
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card');
+    const movesElement = document.getElementById('moves');
+    const matchesElement = document.getElementById('matches');
+    const winMessageElement = document.getElementById('win-message');
+    const finalMovesElement = document.getElementById('final-moves');
+    let canFlip = true;
 
-// get the card values from the server
-fetch('/cards')
-    .then(response => response.json())
-    .then(data => {
-        cards = data;
-        createCards();
+    // Add click event listeners for cards
+    cards.forEach(card => {
+        card.addEventListener('click', function() {
+            if (!canFlip || this.classList.contains('flipped') || this.classList.contains('matched')) {
+                return;
+            }
+
+            const cardId = this.dataset.id;
+            flipCard(cardId);
+        });
     });
 
-function startGame() {
-    
+    // Function to flip a card via AJAX
+    function flipCard(cardId) {
+        // Create form data
+        const formData = new FormData();
+        formData.append('card_id', cardId);
 
-}
+        // Send request to server
+        fetch('/flip_card', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Update UI based on response
+                updateGameUI(data);
+            })
+            .catch(error => console.error('Error:', error));
+    }
 
+    // Update game UI based on server response
+    function updateGameUI(game_status) {
+        // Update moves counter
+        movesElement.textContent = game_state.moves;
+        matchesElement.textContent = game_status.matched_pairs;
 
-function createCards() {
-    const gridContainer = document.querySelector('.grid-container');
-    gridContainer.innerHTML = '';
-    cards.forEach((value, index) => {
-        const card = document.createElement('div');
-        card.classList.add('card');
-        card.dataset.value = value;
-        card.dataset.index = index;
-        card.addEventListener('click', handleCardClick);
-        gridContainer.appendChild(card);
-    });
-}
+        // Update card states
+        game_status.cards.forEach(card => {
+            const cardElement = document.querySelector(.card[data-id="${card.id}"]);
+            if (card.is_flipped) {
+                cardElement.classList.add('flipped');
+            } else {
+                cardElement.classList.remove('flipped');
+            }
+            if (card.is_matched) {
+                cardElement.classList.add('matched');
+            }
+        });
 
-function handleCardClick(event) {
-    const card = event.target;
-    if (flippedCards.length < 2 && !card.classList.contains('flipped')) {
-        card.classList.add('flipped');
-        card.textContent = card.dataset.value;
-        flippedCards.push(card);
-        if (flippedCards.length === 2) {
-            checkForMatch();
+        // Handle non-matching cards
+        if (gameState.no_match) {
+            canFlip = false;
+
+            // Wait before flipping back
+            setTimeout(() => {
+                // Create request to reset flipped cards
+                fetch('/reset_flipped_cards', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        card_ids: gameState.cards_to_flip_back
+                    })
+                })
+                    .then(() => {
+                        // Remove flipped class from cards
+                        gameState.cards_to_flip_back.forEach(cardId => {
+                            const cardElement = document.querySelector(.card[data-id="${cardId}"]);
+                            cardElement.classList.remove('flipped');
+                        });
+                        canFlip = true;
+                    });
+                }, 1000);
+        }
+
+        // Handle game completion
+        if (gameState.game_completed) {
+            winMessageElement.style.display = 'block';
+            finalMovesElement.textContent = gameState.moves;
         }
     }
-}
-
-function checkForMatch() {
-    const [card1, card2] = flippedCards;
-    if (card1.dataset.value === card2.dataset.value) {
-        score++;
-        document.querySelector('.score').textContent = score;
-        flippedCards = [];
-    } else {
-        setTimeout(() => {
-            card1.classList.remove('flipped');
-            card2.classList.remove('flipped');
-            card1.textContent = '';
-            card2.textContent = '';
-            flippedCards = [];
-        }, 1000);
-    }
-}
-
-function restart() {
-    score = 0;
-    document.querySelector('.score').textContent = score;
-    flippedCards = [];
-    fetch('/cards')
-        .then(response => response.json())
-        .then(data => {
-            cards = data;
-            createCards();
-        });
-}
+});
