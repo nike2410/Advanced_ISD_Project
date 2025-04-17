@@ -12,7 +12,11 @@
     <p>This is a simple website hosted on PythonAnywhere</p>
 
     <!-- create link to statistics page -->
-    <a href="/static/statistics.html">View Statistics</a>
+    <div class="controls">
+            <a href="/static/statistics.html">
+                <button type="submit">View Statistics</button>
+        </a>
+    </div>
 
     <div class="game-info">
         <div class="stats">Moves: <span id="moves">{{ game_state.moves }}</span></div>
