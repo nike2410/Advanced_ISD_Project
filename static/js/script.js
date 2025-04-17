@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!canFlip || this.classList.contains('flipped') || this.classList.contains('matched')) {
                 return;
             }
-
             const cardId = this.dataset.id;
             console.log(`Clicked card with ID: ${cardId}`);
             flipCard(cardId);

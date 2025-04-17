@@ -8,18 +8,12 @@
 </head>
 
 <body>
-    <button id="dark-mode">Activate Dark Mode</button>
     <h1>Welcome to the webpage of TriMy!</h1>
     <p>This is a simple website hosted on PythonAnywhere</p>
 
     <!-- create link to statistics page -->
     <a href="/static/statistics.html">View Statistics</a>
 
-
-    <!-- Restart button to start the game from scratch -->
-    <div class="actions">
-        <button onclick="restart()">Restart</button>
-    </div>
     <div class="game-info">
         <div class="stats">Moves: <span id="moves">{{ game_state.moves }}</span></div>
         <div class="stats">Matches: <span id="matches">{{ game_state.matched_pairs }}</span> / <span id="total-pairs">{{ game_state.total_pairs }}</span></div>
@@ -44,3 +38,6 @@
             <button type="submit">Restart Game</button>
         </form>
     </div>
+<script src="/static/js/script.js"></script>
+</body>
+</html>

@@ -33,9 +33,7 @@ def create_cards():
             'is_flipped': False,
             'is_matched': False
         })
-
     return card_objects
-
 
 def start_new_game():
     # new session id
@@ -51,7 +49,6 @@ def start_new_game():
     }
     return game_id, game_state
 
-
 # Routes
 @app.route('/')
 def index():
@@ -65,7 +62,6 @@ def index():
     return render_template('index.html',
                            game_id=game_id,
                            game_state=game_state)
-
 
 @app.route('/new_game', methods=['POST'])
 def new_game():
