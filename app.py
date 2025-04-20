@@ -10,7 +10,7 @@ app.secret_key = os.urandom(24)  # generates the secret key for the session
 
 total_pairs = 8  # as we only have one game mode so far we use this constant
 
-
+#function to create the card entities, load different lists with properties
 def create_cards():
     # Define the card symbols we'll use
     card_symbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']  # will be replaced by pictures later
