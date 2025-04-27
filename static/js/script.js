@@ -6,8 +6,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const finalMovesElement = document.getElementById('final-moves');
     let canFlip = true;
 
-    // Debug: Check if cards are found
-    console.log(`Found ${cards.length} cards`);
+    // Preload all card images
+    fetch('/preload_images')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Preloading images:', data.images);
+            data.images.forEach(src => {
+                const img = new Image();
+                img.src = src;
+                console.log('Preloaded:', src);
+            });
+        })
+        .catch(error => console.error('Error preloading images:', error));
 
     // Add click event listeners for cards
     cards.forEach(card => {
@@ -45,6 +55,37 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Data received:', data);
             // Update UI based on response
             updateGameUI(data);
+
+            // Handle non-matching cards
+            if (data.no_match && data.cards_to_flip_back) {
+                console.log('No match found, will flip cards back');
+                canFlip = false;
+
+                // Wait before flipping back
+                setTimeout(() => {
+                    // Call the server to reset the cards
+                    fetch('/reset_flipped_cards', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            card_ids: data.cards_to_flip_back
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(resetData => {
+                        console.log('Cards reset response:', resetData);
+                        // Update UI with reset data
+                        updateGameUI(resetData);
+                        canFlip = true;
+                    })
+                    .catch(error => {
+                        console.error('Error resetting cards:', error);
+                        canFlip = true; // Ensure we don't lock the game if reset fails
+                    });
+                }, 1000);
+            }
         })
         .catch(error => console.error('Error:', error));
     }
@@ -62,6 +103,18 @@ document.addEventListener('DOMContentLoaded', function() {
             matchesElement.textContent = game_state.matched_pairs;
         }
 
+        //handle the case a match is found
+        if (game_state.match_found && game_state.matched_card_ids) {
+            //make sure cards are marked in UI
+            game_state.matched_card_ids.forEach(card_id => {
+                const cardElement = document.querySelector(`.card[data-id="${card_id}"]`);
+                if (cardElement) {
+                    cardElement.classList.add('matched');
+                    cardElement.classList.add('flipped');
+                }
+            });
+        }
+
         // Update card states
         if (game_state.cards) {
             game_state.cards.forEach(card => {
@@ -71,54 +124,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                if (card.is_flipped) {
+                if (card.is_matched) {
+                    cardElement.classList.add('matched');
+                    cardElement.classList.add('flipped'); // make sure matched cards stay flipped open, had some issues with this
+                } else if (card.is_flipped) {
                     cardElement.classList.add('flipped');
                 } else {
                     cardElement.classList.remove('flipped');
                 }
 
-                if (card.is_matched) {
-                    cardElement.classList.add('matched');
-                }
             });
-        }
-
-        // Handle non-matching cards
-        if (game_state.no_match) {
-            console.log('No match found, will flip cards back');
-            canFlip = false;
-
-            // Wait before flipping back
-            setTimeout(() => {
-                // Create request to reset flipped cards
-                fetch('/reset_flipped_cards', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        card_ids: game_state.cards_to_flip_back
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Cards reset response:', data);
-                    // Remove flipped class from cards
-                    if (game_state.cards_to_flip_back) {
-                        game_state.cards_to_flip_back.forEach(cardId => {
-                            const cardElement = document.querySelector(`.card[data-id="${cardId}"]`);
-                            if (cardElement) {
-                                cardElement.classList.remove('flipped');
-                            }
-                        });
-                    }
-                    canFlip = true;
-                })
-                .catch(error => {
-                    console.error('Error resetting cards:', error);
-                    canFlip = true; // Ensure we don't lock the game if reset fails
-                });
-            }, 1000);
         }
 
         // Handle game completion
@@ -133,21 +148,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // For restart button if you have one separate from the form
-    const restartButton = document.querySelector('button[onclick="restart()"]');
-    if (restartButton) {
-        // Override the inline onclick handler
-        restartButton.onclick = function(e) {
-            e.preventDefault();
-            fetch('/new_game', {
-                method: 'POST'
-            })
-            .then(response => {
-                if (response.redirected) {
-                    window.location.href = response.url;
-                }
-            })
-            .catch(error => console.error('Error restarting game:', error));
-        };
+    // For restart button
+    const restartButton = document.querySelector('button[type="submit"]');
+    if (restartButton && restartButton.textContent.trim() === 'Restart Game') {
+        // Override the form submission
+        const form = restartButton.closest('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                fetch('/new_game', {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    }
+                })
+                .catch(error => console.error('Error restarting game:', error));
+            });
+        }
     }
 });

@@ -126,6 +126,8 @@ def flip_card():
             first_card['is_matched'] = True
             second_card['is_matched'] = True
             game_state['matched_pairs'] += 1
+            result['match_found'] = True
+            result['matched:card_ids'] = [first_card_id, second_card_id]
             game_state['flipped_cards'] = []
 
             # Check if game is complete
@@ -134,21 +136,20 @@ def flip_card():
                 result['game_completed'] = True
                 result['moves'] = game_state['moves']
         else:
-            # No match - cards will be flipped back by front-end after delay
+            # No match - cards will be flipped back
             result['no_match'] = True
             result['cards_to_flip_back'] = game_state['flipped_cards']
             game_state['flipped_cards'] = []
 
-    # Update session
+    # Update session and return game state
     session[f'game_{game_id}'] = game_state
+    session.modified = True
+    return jsonify(**game_state, **result)
 
-    # Return updated game state
-    return jsonify({**game_state, **result})
-
-
+#route that handles the back flipping of the cards
 @app.route('/reset_flipped_cards', methods=['POST'])
 def reset_flipped_cards():
-    """Endpoint to reset flipped cards when they don't match"""
+    #Endpoint to reset flipped cards when they dont match
     game_id = session.get('game_id')
     if not game_id or f'game_{game_id}' not in session:
         return jsonify({'error': 'No active game'}), 400
@@ -163,10 +164,24 @@ def reset_flipped_cards():
         if 0 <= card_id < len(game_state['cards']):
             game_state['cards'][card_id]['is_flipped'] = False
 
-    # Update session
+    # Update session and return game state
     session[f'game_{game_id}'] = game_state
+    return jsonify(game_state)
 
-    return jsonify({'success': True})
+#reload the card pictures for better performance - important for time keeping mode (will be added later)
+@app.route('/preload_images')
+def preload_images():
+    card_symbols = [
+        'static/images/card_pictures/card_picture_1.jpg',
+        'static/images/card_pictures/card_picture_2.jpg',
+        'static/images/card_pictures/card_picture_3.jpg',
+        'static/images/card_pictures/card_picture_4.jpg',
+        'static/images/card_pictures/card_picture_5.jpg',
+        'static/images/card_pictures/card_picture_6.jpg',
+        'static/images/card_pictures/card_picture_7.jpg',
+        'static/images/card_pictures/card_picture_8.jpg'
+    ]
+    return jsonify(images=card_symbols)
 
 if __name__ == "__main__":
     app.run(debug=True)
