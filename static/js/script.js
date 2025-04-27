@@ -5,19 +5,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const winMessageElement = document.getElementById('win-message');
     const finalMovesElement = document.getElementById('final-moves');
     let canFlip = true;
+    let preloadedImages = {};
+    let loadedImages = 0;
+    let totalImages = 0;
+
 
     // Preload all card images
-    fetch('/preload_images')
-        .then(response => response.json())
-        .then(data => {
-            console.log('Preloading images:', data.images);
-            data.images.forEach(src => {
-                const img = new Image();
-                img.src = src;
-                console.log('Preloaded:', src);
-            });
-        })
-        .catch(error => console.error('Error preloading images:', error));
+    function preloadCardImages() {
+        const cardFrontImages = document.querySelectorAll('.front img');
+        totalImages = cardFrontImages.length;
+
+        const gameContainer = document.querySelector('.game-container');
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.id = 'loading-indicator';
+        loadingIndicator.textContent = 'Loading cards...';
+        loadingIndicator.style.textAlign = 'center';
+        loadingIndicator.style.margin = '10px 0';
+        loadingIndicator.style.color = '#3498db';
+        loadingIndicator.style.fontWeight = 'bold';
+
+        const memoryGame = document.querySelector('.memory-game');
+        if (gameContainer && memoryGame) {
+            gameContainer.insertBefore(loadingIndicator, memoryGame);
+            //make sure game is only visible when images are done loading
+            gameContainer.style.visibility = 'visible';
+        }
+
+        //process each image
+        cardFrontImages.forEach(imgElement => {
+            const source = imgElement.getAttribute('source');
+            const img = new Image();
+
+            img.onload = function() {
+                loadedImages++;
+                preloadedImages[source] = true;
+
+                //update the loading indicator
+                if (loadingIndicator) {
+                    loadingIndicator.textContent = `Loading cards (${loadedImages}/${totalImages})...`;
+                }
+
+                if (loadedImages >= totalImages) {
+                    //remove the loading div
+                    if (loadingIndicator) loadingIndicator.remove();
+                    if (memoryGame) memoryGame.style.visibility = 'visible';
+                    console.log('All images are now preloaded succesfully');
+                }
+            };
+            img.src = source;
+        });
+    }
+    //start the preloading directly
+    preloadCardImages();
 
     // Add click event listeners for cards
     cards.forEach(card => {

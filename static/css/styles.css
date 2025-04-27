@@ -49,8 +49,9 @@ h1 {
     width: 100%; /* make sure the pictures fit */
     position: relative;
     transform-style: preserve-3d;
-    transition: transform 0.5s;
+    transition: transform 0.4s;
     cursor: pointer;
+    will-change: transform;
 }
 
 .card.flipped {
@@ -72,6 +73,7 @@ h1 {
     justify-content: center;
     align-items: center;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    will-change: transform;
 }
 
 .front {
