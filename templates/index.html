@@ -27,7 +27,9 @@
     <div class="memory-game" id="memory-game">
         {% for card in game_state.cards %}
         <div class="card {% if card.is_flipped %}flipped{% endif %} {% if card.is_matched %}matched{% endif %}" data-id="{{ card.id }}">
-            <div class="front">{{ card.symbol }}</div>
+            <div class="front">
+                <img src="{{ card.image_path }}" alt="Card Image">
+            </div>
             <div class="back"></div>
         </div>
         {% endfor %}

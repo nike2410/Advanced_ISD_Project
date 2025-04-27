@@ -13,23 +13,32 @@ total_pairs = 8  # as we only have one game mode so far we use this constant
 #function to create the card entities, load different lists with properties
 def create_cards():
     # Define the card symbols we'll use
-    card_symbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']  # will be replaced by pictures later
+    card_symbols = [
+        'static/images/card_pictures/card_picture_1.jpg',
+        'static/images/card_pictures/card_picture_2.jpg',
+        'static/images/card_pictures/card_picture_3.jpg',
+        'static/images/card_pictures/card_picture_4.jpg',
+        'static/images/card_pictures/card_picture_5.jpg',
+        'static/images/card_pictures/card_picture_6.jpg',
+        'static/images/card_pictures/card_picture_7.jpg',
+        'static/images/card_pictures/card_picture_8.jpg'
+    ]  # will add the real pictures later, currently only stock photos
 
     # Create pairs by duplicating each symbol
     cards = []
-    for symbol in card_symbols:
-        cards.append(symbol)
-        cards.append(symbol)
+    for image_path in card_symbols:
+        cards.append(image_path)
+        cards.append(image_path)
 
     # Shuffle the cards
     random.shuffle(cards)
 
     # Create card objects with necessary properties
     card_objects = []
-    for i, symbol in enumerate(cards):
+    for i, image_path in enumerate(cards):
         card_objects.append({
             'id': i,
-            'symbol': symbol,
+            'image_path': image_path,
             'is_flipped': False,
             'is_matched': False
         })
@@ -112,8 +121,8 @@ def flip_card():
         second_card = game_state['cards'][second_card_id]
 
         # Check for match
-        if first_card['symbol'] == second_card['symbol']:
-            # It's a match!
+        if first_card['image_path'] == second_card['image_path']:
+            #adjust status of cards
             first_card['is_matched'] = True
             second_card['is_matched'] = True
             game_state['matched_pairs'] += 1
