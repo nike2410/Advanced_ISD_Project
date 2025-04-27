@@ -127,13 +127,12 @@ def flip_card():
             second_card['is_matched'] = True
             game_state['matched_pairs'] += 1
             result['match_found'] = True
-            result['matched:card_ids'] = [first_card_id, second_card_id]
+            result['matched_card_ids'] = [first_card_id, second_card_id]
             game_state['flipped_cards'] = []
 
             # Check if game is complete
-            if game_state['matched_pairs'] == game_state['total_pairs']:
+            if game_state['matched_pairs'] >= game_state['total_pairs']:
                 game_state['game_completed'] = True
-                result['game_completed'] = True
                 result['moves'] = game_state['moves']
         else:
             # No match - cards will be flipped back
@@ -144,7 +143,12 @@ def flip_card():
     # Update session and return game state
     session[f'game_{game_id}'] = game_state
     session.modified = True
-    return jsonify(**game_state, **result)
+
+    # create copy and merge to avoid duplicate keys
+    response_data = game_state.copy()  # Create a copy of game_state
+    response_data.update(result)  # Update with result (this will overwrite any duplicate keys)
+
+    return jsonify(response_data)  # Return the merged dictionary
 
 #route that handles the back flipping of the cards
 @app.route('/reset_flipped_cards', methods=['POST'])
