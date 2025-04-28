@@ -15,30 +15,34 @@ document.addEventListener('DOMContentLoaded', function() {
         const cardFrontImages = document.querySelectorAll('.front img');
         totalImages = cardFrontImages.length;
 
+        const memoryGame = document.querySelector('.memory-game');
+
+        //Hide the game until loading is done
+        if (memoryGame) {
+            memoryGame.style.visibility = 'hidden';
+        }
+
         const gameContainer = document.querySelector('.game-container');
         const loadingIndicator = document.createElement('div');
         loadingIndicator.id = 'loading-indicator';
-        loadingIndicator.textContent = 'Loading cards...';
+        loadingIndicator.textContent = 'Preparing the game...';
         loadingIndicator.style.textAlign = 'center';
         loadingIndicator.style.margin = '10px 0';
         loadingIndicator.style.color = '#3498db';
         loadingIndicator.style.fontWeight = 'bold';
 
-        const memoryGame = document.querySelector('.memory-game');
         if (gameContainer && memoryGame) {
             gameContainer.insertBefore(loadingIndicator, memoryGame);
-            //make sure game is only visible when images are done loading
-            gameContainer.style.visibility = 'visible';
         }
 
         //process each image
         cardFrontImages.forEach(imgElement => {
-            const source = imgElement.getAttribute('source');
+            const src = imgElement.getAttribute('src');
             const img = new Image();
 
             img.onload = function() {
                 loadedImages++;
-                preloadedImages[source] = true;
+                preloadedImages[src] = true;
 
                 //update the loading indicator
                 if (loadingIndicator) {
@@ -49,10 +53,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     //remove the loading div
                     if (loadingIndicator) loadingIndicator.remove();
                     if (memoryGame) memoryGame.style.visibility = 'visible';
-                    console.log('All images are now preloaded succesfully');
+                    console.log('All images are now preloaded successfully');
                 }
             };
-            img.src = source;
+            img.src = src;
         });
     }
     //start the preloading directly
