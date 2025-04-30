@@ -15,18 +15,20 @@
 
     <!-- create link to statistics page -->
     <div class="controls">
-            <a href="/static/statistics.html">
-                <button type="submit">View Statistics</button>
+        <a href="/static/statistics.html">
+            <button type="submit">View Statistics</button>
         </a>
     </div>
 
-    <div class="game-info">
+    <div class="game-info" id="game-info">
         <!-- section for game info-->
         <div class="stats">Moves: <span id="moves">{{ game_state.moves }}</span></div>
+        <div class="stats">Time: <span id="timer">00:00</span></div>
         <div class="stats">Pairs found: <span id="matches">{{ game_state.matched_pairs }}</span> / <span id="total-pairs">{{ game_state.total_pairs }}</span></div>
     </div>
 
-     <!-- Start Game Button -->
+    <div class="game-container">
+        <!-- Start Game Button -->
         <div class="controls start-game-container">
             <button id="start-game-button" disabled>Loading...</button>
         </div>
@@ -43,25 +45,27 @@
             {% endfor %}
         </div>
 
-    <!-- message after game completion-->
-    <div class="win-message" id="win-message" {% if game_state.game_completed %}style="display:block;"{% endif %}>
-        Congratulations! You've completed the game!<br>
-        Total moves needed: <span id="final-moves">{{ game_state.moves }}</span>
-    </div>
+        <!-- message after game completion-->
+        <div class="win-message" id="win-message" {% if game_state.game_completed %}style="display:block;"{% endif %}>
+            Congratulations! You've completed the game!<br>
+            Total moves needed: <span id="final-moves">{{ game_state.moves }}</span><br>
+            Time taken: <span id="final-time">00:00</span>
+        </div>
 
-    <!-- restart button -->
-    <div class="controls">
-        <form method="POST" action="{{ url_for('new_game') }}">
-            <button type="submit">Restart Game</button>
-        </form>
+        <!-- restart button -->
+        <div class="controls" id="restart-button-container">
+            <form method="POST" action="{{ url_for('new_game') }}" id="restart-form">
+                <button type="submit">Restart Game</button>
+            </form>
+        </div>
     </div>
 
     <!-- logout button -->
-    <div style="text-align: right;">
-    <a href="{{ url_for('logout') }}">
-        <button>Logout</button>
-    </a>
-</div>
-<script src="/static/js/script.js"></script>
+    <div class="controls" id="logout-button-container">
+        <a href="{{ url_for('logout') }}">
+            <button>Logout</button>
+        </a>
+    </div>
+    <script src="/static/js/script.js"></script>
 </body>
 </html>

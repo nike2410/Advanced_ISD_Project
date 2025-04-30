@@ -19,7 +19,11 @@ h1 {
     justify-content: space-between;
     width: 100%;
     max-width: 600px;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
+    background-color: #e3f2fd;
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .stats {
@@ -28,11 +32,16 @@ h1 {
     color: #3498db;
 }
 
+/* Timer specific styling */
+#timer, #final-time {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
 .game-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
     width: 100%;
     max-width: 600px;
 }
@@ -109,6 +118,7 @@ h1 {
 
 .controls {
     margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 button {
@@ -133,6 +143,11 @@ button:hover {
     margin-top: 20px;
     text-align: center;
     display: none;
+    padding: 15px;
+    background-color: #e8f8f5;
+    border-radius: 8px;
+    border: 2px solid #27ae60;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 600px) {
@@ -142,6 +157,12 @@ button:hover {
 
     .card {
         height: 130px;
+    }
+
+    .game-info {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
     }
 }
 
