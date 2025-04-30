@@ -33,6 +33,8 @@ h1 {
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    width: 100%;
+    max-width: 600px;
 }
 
 .memory-game {
@@ -151,4 +153,45 @@ button:hover {
     .card {
         height: 120px;
     }
+}
+/* Style for the start game button container */
+.start-game-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 30px 0;
+}
+
+/* Style for the start game button */
+#start-game-button {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 15px 40px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Hover effect for start button when not disabled */
+#start-game-button:hover:not([disabled]) {
+    background-color: #2ecc71;
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Style for disabled start button */
+#start-game-button:disabled {
+    cursor: not-allowed;
+}
+
+/* Style for the loading indicator */
+#loading-indicator {
+    padding: 10px;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
 }

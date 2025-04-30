@@ -98,7 +98,7 @@ def start_new_game():
 
 
 # --- Game Routes Protected by Login ---
-# Add this code here:
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
