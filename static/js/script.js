@@ -36,9 +36,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Format time as MM:SS
     function formatTime(totalSeconds) {
-        const minutes = Math.floor(totalSeconds / 60);
+        const hours = totalSeconds / 3600;
+        const minutes = Math.floor(totalSeconds / 60) % 60;
         const seconds = totalSeconds % 60;
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        if (hours < 1) {
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            const hoursInt = Math.floor(hours);
+            return `${hoursInt.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
     }
 
     // Start the timer
