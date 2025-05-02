@@ -20,7 +20,7 @@
         </a>
     </div>
 
-    <div class="game-info" id="game-info">
+    <div class="game-info" id="game-info" style = "visibility: hidden;">
         <!-- section for game info-->
         <div class="stats">Moves: <span id="moves">{{ game_state.moves }}</span></div>
         <div class="stats">Time: <span id="timer">00:00</span></div>
@@ -35,7 +35,7 @@
         </div>
 
         <!-- Memory game board -->
-        <div class="memory-game" id="memory-game">
+        <div class="memory-game" id="memory-game" style = "visibility: hidden;">
             {% for card in game_state.cards %}
             <div class="card {% if card.is_flipped %}flipped{% endif %} {% if card.is_matched %}matched{% endif %}" data-id="{{ card.id }}">
                 <div class="front">
