@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
     const cards = document.querySelectorAll('.card');
     const movesElement = document.getElementById('moves');
     const matchesElement = document.getElementById('matches');
@@ -8,37 +9,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const startGameButton = document.getElementById('start-game-button');
     const memoryGame = document.getElementById('memory-game');
     const gameInfo = document.getElementById('game-info');
-    const gameControls = document.getElementById('game-controls');
     const restartButtonContainer = document.getElementById('restart-button-container');
     const timerElement = document.getElementById('timer');
 
-    let canFlip = false; //to make sure game is started only when loading is done
+    // Game state variables
+    let canFlip = false; // Controls whether cards can be flipped
     let preloadedImages = {};
-    let loadedImages = 0;
-    let totalImages = 0;
     let gameStarted = false;
     let gameTimer = null;
     let secondsElapsed = 0;
 
-    // Hide the game and controls until start button is pressed
-    if (memoryGame) {
-        memoryGame.style.visibility = 'hidden';
-    }
+    // Initial UI setup
+    if (memoryGame) memoryGame.style.visibility = 'hidden';
+    if (gameInfo) gameInfo.style.visibility = 'hidden';
+    if (restartButtonContainer) restartButtonContainer.style.display = 'none';
 
-    if (gameInfo) {
-        gameInfo.style.visibility = 'hidden';
-    }
-
-    // Hide restart button initially
-    if (restartButtonContainer) {
-        restartButtonContainer.style.display = 'none';
-    }
-
-    // Format time as MM:SS
+    /**
+     * Formats seconds to MM:SS or HH:MM:SS format
+     * @param {number} totalSeconds - Seconds to format
+     * @return {string} Formatted time string
+     */
     function formatTime(totalSeconds) {
         const hours = totalSeconds / 3600;
         const minutes = Math.floor(totalSeconds / 60) % 60;
         const seconds = totalSeconds % 60;
+
         if (hours < 1) {
             return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         } else {
@@ -47,11 +42,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Start the timer
+    /**
+     * Starts the game timer
+     */
     function startTimer() {
-        if (gameTimer) {
-            clearInterval(gameTimer);
-        }
+        if (gameTimer) clearInterval(gameTimer);
 
         secondsElapsed = 0;
         updateTimerDisplay();
@@ -62,14 +57,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 
-    // Update the timer display
+    /**
+     * Updates the timer display with the current elapsed time
+     */
     function updateTimerDisplay() {
         if (timerElement) {
             timerElement.textContent = formatTime(secondsElapsed);
         }
     }
 
-    // Stop the timer
+    /**
+     * Stops the game timer
+     */
     function stopTimer() {
         if (gameTimer) {
             clearInterval(gameTimer);
@@ -77,15 +76,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Preload all card images
+    /**
+     * Preloads card images before starting the game
+     */
     function preloadCardImages() {
         // Fetch image paths from server
         fetch('/preload_images')
             .then(response => response.json())
             .then(data => {
                 const imagePaths = data.images;
-                totalImages = imagePaths.length;
+                const totalImages = imagePaths.length;
 
+                // Create loading indicator
                 const gameContainer = document.querySelector('.game-container');
                 const loadingIndicator = document.createElement('div');
                 loadingIndicator.id = 'loading-indicator';
@@ -103,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                // Make sure start button shows proper loading state
+                // Set start button to loading state
                 if (startGameButton) {
                     startGameButton.disabled = true;
                     startGameButton.style.opacity = '0.5';
@@ -114,6 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 let imagesLoaded = 0;
                 imagePaths.forEach(path => {
                     const img = new Image();
+
                     img.onload = function() {
                         imagesLoaded++;
 
@@ -126,12 +129,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (imagesLoaded >= totalImages) {
                             console.log('All images preloaded successfully');
 
-                            // Remove loading indicator
-                            if (loadingIndicator) {
-                                loadingIndicator.remove();
-                            }
-
-                            // Update start button
+                            // Remove loading indicator and enable start button
+                            if (loadingIndicator) loadingIndicator.remove();
                             if (startGameButton) {
                                 startGameButton.disabled = false;
                                 startGameButton.style.opacity = '1';
@@ -174,57 +173,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start preloading right away
     preloadCardImages();
 
-    // Start game button click handler
-    if (startGameButton) {
-        startGameButton.addEventListener('click', function() {
-            startGame();
-        });
-    }
-
-    // Function to start the game
+    /**
+     * Starts the game after images are loaded
+     */
     function startGame() {
         gameStarted = true;
         canFlip = true; // Allow card flipping
 
-        // Start the timer
         startTimer();
 
-        // Hide the start button
-        if (startGameButton) {
-            startGameButton.style.display = 'none';
-        }
-
-        // Show the memory game
-        if (memoryGame) {
-            memoryGame.style.visibility = 'visible';
-        }
-
-        // Show game info
-        if (gameInfo) {
-            gameInfo.style.visibility = 'visible';
-        }
-
-        // Show restart button now that game has started
-        if (restartButtonContainer) {
-            restartButtonContainer.style.display = 'block';
-        }
+        // Update UI elements
+        if (startGameButton) startGameButton.style.display = 'none';
+        if (memoryGame) memoryGame.style.visibility = 'visible';
+        if (gameInfo) gameInfo.style.visibility = 'visible';
+        if (restartButtonContainer) restartButtonContainer.style.display = 'block';
 
         console.log('Game started!');
     }
 
-    // Add click event listeners for cards
-    cards.forEach(card => {
-        card.addEventListener('click', function() {
-            if (!canFlip || !gameStarted || this.classList.contains('flipped') || this.classList.contains('matched')) {
-                return;
-            }
-            const cardId = this.dataset.id;
-            console.log(`Clicked card with ID: ${cardId}`);
-            flipCard(cardId);
-        });
-    });
+    // Start game button click handler
+    if (startGameButton) {
+        startGameButton.addEventListener('click', startGame);
+    }
 
-    // Function to flip a card via AJAX
+    /**
+     * Flips a card via AJAX request
+     * @param {string} cardId - ID of the card to flip
+     */
     function flipCard(cardId) {
         console.log(`Sending flip request for card: ${cardId}`);
 
@@ -283,11 +258,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => console.error('Error:', error));
     }
 
-    // Update game UI based on server response
+    /**
+     * Updates game UI based on server response
+     * @param {Object} game_state - Current game state from server
+     */
     function updateGameUI(game_state) {
         console.log('Updating game UI with:', game_state);
 
-        // Update moves counter
+        // Update stats counters
         if (movesElement && game_state.moves !== undefined) {
             movesElement.textContent = game_state.moves;
         }
@@ -296,9 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
             matchesElement.textContent = game_state.matched_pairs;
         }
 
-        //handle the case a match is found
+        // Handle matched cards
         if (game_state.match_found && game_state.matched_card_ids) {
-            //make sure cards are marked in UI
             game_state.matched_card_ids.forEach(card_id => {
                 const cardElement = document.querySelector(`.card[data-id="${card_id}"]`);
                 if (cardElement) {
@@ -308,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Update card states
+        // Update all card states
         if (game_state.cards) {
             game_state.cards.forEach(card => {
                 const cardElement = document.querySelector(`.card[data-id="${card.id}"]`);
@@ -319,13 +296,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (card.is_matched) {
                     cardElement.classList.add('matched');
-                    cardElement.classList.add('flipped'); // make sure matched cards stay flipped open, had some issues with this
+                    cardElement.classList.add('flipped'); // Ensure matched cards stay flipped
                 } else if (card.is_flipped) {
                     cardElement.classList.add('flipped');
                 } else {
                     cardElement.classList.remove('flipped');
                 }
-
             });
         }
 
@@ -333,31 +309,36 @@ document.addEventListener('DOMContentLoaded', function() {
         if (game_state.game_completed) {
             console.log('Game completed!');
 
-            // Stop the timer
             stopTimer();
 
-            if (winMessageElement) {
-                winMessageElement.style.display = 'block';
-            }
-            if (finalMovesElement) {
-                finalMovesElement.textContent = game_state.moves;
-            }
-            if (finalTimeElement) {
-                finalTimeElement.textContent = formatTime(secondsElapsed);
-            }
+            if (winMessageElement) winMessageElement.style.display = 'block';
+            if (finalMovesElement) finalMovesElement.textContent = game_state.moves;
+            if (finalTimeElement) finalTimeElement.textContent = formatTime(secondsElapsed);
         }
     }
 
-    // For restart button
+    // Add click event listeners for cards
+    cards.forEach(card => {
+        card.addEventListener('click', function() {
+            if (!canFlip || !gameStarted ||
+                this.classList.contains('flipped') ||
+                this.classList.contains('matched')) {
+                return;
+            }
+            const cardId = this.dataset.id;
+            console.log(`Clicked card with ID: ${cardId}`);
+            flipCard(cardId);
+        });
+    });
+
+    // Configure restart button
     const restartButton = document.querySelector('button[type="submit"][form="restart-form"]');
     if (restartButton) {
-        // Override the form submission
         const form = restartButton.closest('form');
         if (form) {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
 
-                // Stop current timer
                 stopTimer();
 
                 fetch('/new_game', {

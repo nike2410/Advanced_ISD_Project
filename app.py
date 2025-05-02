@@ -1,56 +1,82 @@
 import random
-from flask import Flask, render_template, request, session, jsonify, redirect, url_for
 import os
 import uuid
+from flask import Flask, render_template, request, session, jsonify, redirect, url_for
+from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_sqlalchemy import SQLAlchemy
 
-app = Flask(__name__,
-            template_folder='templates',
-            static_folder='static')
-app.secret_key = os.urandom(24)  # generates the secret key for the session
+# Application initialization
+app = Flask(__name__, template_folder='templates', static_folder='static')
+app.secret_key = os.urandom(24)  # Secret key for session management
 
-total_pairs = 8  # as we only have one game mode so far we use this constant
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-#function to create the card entities, load different lists with properties
+# Game constants
+TOTAL_PAIRS = 8  # Number of card pairs for the game
+
+# User model definition
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.String(150), nullable=False)
+    high_score = db.Column(db.Integer, default=0)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+# Flask-Login setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+# Game helper functions
 def create_cards():
-    # Define the card symbols we'll use
+    """Create and shuffle memory game cards"""
+    # Define card images
     card_symbols = [
-        'static/images/card_pictures/card_picture_1.jpg',
-        'static/images/card_pictures/card_picture_2.jpg',
-        'static/images/card_pictures/card_picture_3.jpg',
-        'static/images/card_pictures/card_picture_4.jpg',
-        'static/images/card_pictures/card_picture_5.jpg',
-        'static/images/card_pictures/card_picture_6.jpg',
-        'static/images/card_pictures/card_picture_7.jpg',
-        'static/images/card_pictures/card_picture_8.jpg'
-    ]  # will add the real pictures later, currently only stock photos
+        f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9)
+    ]
 
-    # Create pairs by duplicating each symbol
+    # Create pairs by duplicating each image
     cards = []
     for image_path in card_symbols:
-        cards.append(image_path)
-        cards.append(image_path)
+        cards.extend([image_path, image_path])
 
     # Shuffle the cards
     random.shuffle(cards)
 
     # Create card objects with necessary properties
-    card_objects = []
-    for i, image_path in enumerate(cards):
-        card_objects.append({
+    card_objects = [
+        {
             'id': i,
             'image_path': image_path,
             'is_flipped': False,
             'is_matched': False
-        })
+        } for i, image_path in enumerate(cards)
+    ]
     return card_objects
 
+
 def start_new_game():
-    # new session id
+    """Initialize a new game session"""
+    # Generate unique game ID
     game_id = str(uuid.uuid4())
 
+    # Set up initial game state
     game_state = {
         'cards': create_cards(),
-        'total_pairs': total_pairs,
+        'total_pairs': TOTAL_PAIRS,
         'flipped_cards': [],
         'matched_pairs': 0,
         'moves': 0,
@@ -58,35 +84,95 @@ def start_new_game():
     }
     return game_id, game_state
 
-# Routes
-@app.route('/')
-def index():
-    # Start a new game when visiting the homepage
-    game_id, game_state = start_new_game()
 
-    # Store game state in session
+# Authentication routes
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        password_hash = generate_password_hash(password)
+
+        # Check if username already exists
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            # Generate username suggestions
+            suggestions = [
+                f"{username}{random.randint(1, 100)}",
+                f"{username}_{random.randint(100, 999)}",
+                f"{username}{random.randint(1000, 9999)}"
+            ]
+            return render_template('signup.html',
+                                   error="Username already exists!",
+                                   suggestions=suggestions,
+                                   original_username=username)
+
+        # Create and save new user
+        user = User(username=username, password_hash=password_hash)
+        db.session.add(user)
+        db.session.commit()
+
+        # Auto-login after signup
+        login_user(user)
+        return redirect(url_for('index'))
+
+    # GET request - display signup form
+    return render_template('signup.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # Verify user credentials
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect(url_for('index'))
+        return 'Invalid username or password'
+
+    # GET request - display login form
+    return render_template('login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+
+# Game routes
+@app.route('/')
+@login_required
+def index():
+    """Main game page - start a new game"""
+    game_id, game_state = start_new_game()
     session['game_id'] = game_id
     session[f'game_{game_id}'] = game_state
-
     return render_template('index.html',
                            game_id=game_id,
-                           game_state=game_state)
+                           game_state=game_state,
+                           username=current_user.username)
+
 
 @app.route('/new_game', methods=['POST'])
+@login_required
 def new_game():
-    # Create new game
+    """Create a new game session"""
     game_id, game_state = start_new_game()
-
-    # Store in session
     session['game_id'] = game_id
     session[f'game_{game_id}'] = game_state
-
     return redirect(url_for('index'))
 
 
 @app.route('/flip_card', methods=['POST'])
+@login_required
 def flip_card():
-    # Get current game
+    """Handle card flip actions"""
+    # Get current game from session
     game_id = session.get('game_id')
     if not game_id or f'game_{game_id}' not in session:
         return jsonify({'error': 'No active game'}), 400
@@ -113,16 +199,13 @@ def flip_card():
     result = {}
     if len(game_state['flipped_cards']) == 2:
         game_state['moves'] += 1
-
-        # Get the two flipped cards
-        first_card_id = game_state['flipped_cards'][0]
-        second_card_id = game_state['flipped_cards'][1]
+        first_card_id, second_card_id = game_state['flipped_cards']
         first_card = game_state['cards'][first_card_id]
         second_card = game_state['cards'][second_card_id]
 
         # Check for match
         if first_card['image_path'] == second_card['image_path']:
-            #adjust status of cards
+            # Match found - update card status
             first_card['is_matched'] = True
             second_card['is_matched'] = True
             game_state['matched_pairs'] += 1
@@ -140,27 +223,25 @@ def flip_card():
             result['cards_to_flip_back'] = game_state['flipped_cards']
             game_state['flipped_cards'] = []
 
-    # Update session and return game state
+    # Update session and return response
     session[f'game_{game_id}'] = game_state
     session.modified = True
 
-    # create copy and merge to avoid duplicate keys
-    response_data = game_state.copy()  # Create a copy of game_state
-    response_data.update(result)  # Update with result (this will overwrite any duplicate keys)
+    # Create response with game state and result data
+    response_data = game_state.copy()
+    response_data.update(result)
+    return jsonify(response_data)
 
-    return jsonify(response_data)  # Return the merged dictionary
 
-#route that handles the back flipping of the cards
 @app.route('/reset_flipped_cards', methods=['POST'])
+@login_required
 def reset_flipped_cards():
-    #Endpoint to reset flipped cards when they dont match
+    """Reset cards that don't match back to unflipped state"""
     game_id = session.get('game_id')
     if not game_id or f'game_{game_id}' not in session:
         return jsonify({'error': 'No active game'}), 400
 
     game_state = session[f'game_{game_id}']
-
-    # Get card IDs from request
     card_ids = request.json.get('card_ids', [])
 
     # Reset the flipped state for these cards
@@ -172,20 +253,20 @@ def reset_flipped_cards():
     session[f'game_{game_id}'] = game_state
     return jsonify(game_state)
 
-#reload the card pictures for better performance - important for time keeping mode (will be added later)
+
 @app.route('/preload_images')
+@login_required
 def preload_images():
+    """Return paths of card images for preloading"""
     card_symbols = [
-        'static/images/card_pictures/card_picture_1.jpg',
-        'static/images/card_pictures/card_picture_2.jpg',
-        'static/images/card_pictures/card_picture_3.jpg',
-        'static/images/card_pictures/card_picture_4.jpg',
-        'static/images/card_pictures/card_picture_5.jpg',
-        'static/images/card_pictures/card_picture_6.jpg',
-        'static/images/card_pictures/card_picture_7.jpg',
-        'static/images/card_pictures/card_picture_8.jpg'
+        f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9)
     ]
     return jsonify(images=card_symbols)
 
+
+# Create database tables on application startup
+with app.app_context():
+    db.create_all()
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
