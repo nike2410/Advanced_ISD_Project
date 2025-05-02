@@ -314,8 +314,47 @@ document.addEventListener('DOMContentLoaded', function() {
             if (winMessageElement) winMessageElement.style.display = 'block';
             if (finalMovesElement) finalMovesElement.textContent = game_state.moves;
             if (finalTimeElement) finalTimeElement.textContent = formatTime(secondsElapsed);
+
+            // Save score when game is completed
+            saveScore(game_state.moves, secondsElapsed);
         }
     }
+
+    function saveScore(moves, seconds) {
+    fetch('/save_score', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            moves: moves,
+            seconds: seconds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Score saved:', data);
+
+        // Update the win message with score information
+        const scoreElement = document.getElementById('final-score');
+        if (scoreElement) {
+            scoreElement.textContent = data.score;
+        }
+
+        // Show high score message if applicable
+        const highScoreMessage = document.getElementById('high-score-message');
+        if (highScoreMessage) {
+            if (data.is_high_score) {
+                highScoreMessage.style.display = 'block';
+                highScoreMessage.textContent = `New personal high score: ${data.score}!`;
+            } else {
+                highScoreMessage.style.display = 'block';
+                highScoreMessage.textContent = `Your high score: ${data.high_score}`;
+            }
+        }
+    })
+    .catch(error => console.error('Error saving score:', error));
+}
 
     // Add click event listeners for cards
     cards.forEach(card => {

@@ -216,3 +216,29 @@ button:hover {
     margin-bottom: 20px;
     font-size: 1.1rem;
 }
+
+/* Styling for score display */
+#final-score {
+    color: #e67e22;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+#high-score-message {
+    background-color: #fff3cd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    margin-top: 10px;
+    border: 1px solid #ffeeba;
+    animation: pulse 1.5s infinite alternate;
+}
+
+@keyframes pulse {
+    from {
+        opacity: 0.8;
+    }
+    to {
+        opacity: 1;
+        box-shadow: 0 0 10px rgba(255, 193, 7, 0.7);
+    }
+}

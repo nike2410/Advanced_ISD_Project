@@ -85,6 +85,62 @@ def start_new_game():
     return game_id, game_state
 
 
+def calculate_score(moves, seconds_elapsed, total_pairs):
+    # Minimum possible moves is equal to the number of pairs
+    min_possible_moves = total_pairs
+
+    # Base score
+    base_score = 10000
+
+    # Penalty per extra move (beyond minimum)
+    move_penalty = 50
+    extra_moves = max(0, moves - min_possible_moves)
+    move_deduction = extra_moves * move_penalty
+
+    # Time penalty (points per second)
+    time_penalty = 10
+    time_deduction = seconds_elapsed * time_penalty
+
+    # Calculate final score (minimum score is 100)
+    score = max(100, base_score - move_deduction - time_deduction)
+
+    return int(score)
+
+@app.route('/save_score', methods=['POST'])
+@login_required
+def save_score():
+    """Save game score to user's record if it's a high score"""
+
+    # Get game data from request
+    data = request.json
+    moves = data.get('moves', 0)
+    seconds_elapsed = data.get('seconds', 0)
+
+    # Calculate score using our algorithm
+    game_id = session.get('game_id')
+    if not game_id or f'game_{game_id}' not in session:
+        return jsonify({'error': 'No active game'}), 400
+
+    game_state = session[f'game_{game_id}']
+    total_pairs = game_state['total_pairs']
+
+    score = calculate_score(moves, seconds_elapsed, total_pairs)
+
+    # Check if this is a new high score for the user
+    user = current_user
+    is_high_score = False
+
+    if score > user.high_score:
+        user.high_score = score
+        db.session.commit()
+        is_high_score = True
+
+    return jsonify({
+        'score': score,
+        'is_high_score': is_high_score,
+        'high_score': user.high_score
+    })
+
 # Authentication routes
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
