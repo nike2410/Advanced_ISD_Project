@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Your Email</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="icon" href="/static/images/favicon_TriMy.ico" type="image/x-icon">
+</head>
+<body>
+    <h2>Verify Your Email</h2>
+
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+
+    <p>We've sent a verification code to <strong>{{ email }}</strong>. Please enter it below:</p>
+
+    <form method="post">
+        <input type="hidden" name="email" value="{{ email }}">
+        <input type="text" name="code" placeholder="6-digit code" required>
+        <button type="submit">Verify</button>
+    </form>
+
+    <p style="margin-top: 1em;">
+        Not your email? <a href="{{ url_for('signup') }}">Go back to sign up</a>
+    </p>
+</body>
+</html>

@@ -5,10 +5,16 @@ from flask import Flask, render_template, request, session, jsonify, redirect, u
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+from dotenv import load_dotenv
 
 # Application initialization
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.urandom(24)  # Secret key for session management
+
+#getting the API Key for verification process
+load_dotenv("sendgrid.env")
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
@@ -28,6 +34,12 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+class VerificationCode(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(150), nullable=False, unique=True)
+    code = db.Column(db.String(6), nullable=False)
+    password_hash = db.Column(db.String(150), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -39,6 +51,19 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def send_verification_email(to_email, code):
+    message = Mail(
+        from_email='mykola.subtelnyi@uni.li',  # Replace with your verified sender
+        to_emails=to_email,
+        subject='Your Memory Game Verification Code',
+        plain_text_content=f'Hi!\n\nYour verification code is: {code}\n\nThanks for registering.')
+
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        sg.send(message)
+        print(f"Verification email sent to {to_email}")
+    except Exception as e:
+        print(f"Error sending email: {e}")
 
 # Game helper functions
 def create_cards():
@@ -147,34 +172,65 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        password_hash = generate_password_hash(password)
 
-        # Check if username already exists
+        # Only allow university email addresses
+        if not username.endswith('@gmail.com'):
+            return render_template('signup.html',
+                                   error="Only university emails (@uni.li) are allowed.",
+                                   suggestions=[],
+                                   original_username=username)
+
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
-            # Generate username suggestions
             suggestions = [
-                f"{username}{random.randint(1, 100)}",
-                f"{username}_{random.randint(100, 999)}",
-                f"{username}{random.randint(1000, 9999)}"
+                f"{username.split('@')[0]}{random.randint(1, 100)}@uni.li",
+                f"{username.split('@')[0]}_{random.randint(100, 999)}@uni.li"
             ]
             return render_template('signup.html',
                                    error="Username already exists!",
                                    suggestions=suggestions,
                                    original_username=username)
 
-        # Create and save new user
-        user = User(username=username, password_hash=password_hash)
-        db.session.add(user)
+        # Generate verification code
+        code = str(random.randint(100000, 999999))
+        password_hash = generate_password_hash(password)
+
+        # Remove any existing code for that email
+        VerificationCode.query.filter_by(email=username).delete()
+
+        # Save new code to database
+        verification = VerificationCode(email=username, code=code, password_hash=password_hash)
+        db.session.add(verification)
         db.session.commit()
 
-        # Auto-login after signup
-        login_user(user)
-        return redirect(url_for('index'))
+        send_verification_email(username, code)
 
-    # GET request - display signup form
+        return render_template('verify.html', email=username)
+
     return render_template('signup.html')
 
+@app.route('/verify', methods=['GET', 'POST'])
+def verify():
+    if request.method == 'POST':
+        username = request.form['email']
+        entered_code = request.form['code']
+
+        verification = VerificationCode.query.filter_by(email=username).first()
+        if verification:
+            correct_code = verification.code
+            password_hash = verification.password_hash
+
+            if entered_code == correct_code:
+                user = User(username=username, password_hash=password_hash)
+                db.session.add(user)
+                db.session.commit()
+                login_user(user)
+                db.session.delete(verification)
+                db.session.commit()
+            else:
+                return render_template('verify.html', email=username, error="Incorrect code.")
+    email = request.args.get('email', '')
+    return render_template('verify.html', email=email)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -323,6 +379,8 @@ def preload_images():
 # Create database tables on application startup
 with app.app_context():
     db.create_all()
+
+print("API key present:", os.environ.get('SENDGRID_API_KEY') is not None)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
