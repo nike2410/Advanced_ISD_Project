@@ -53,17 +53,21 @@ def load_user(user_id):
 
 def send_verification_email(to_email, code):
     message = Mail(
-        from_email='mykola.subtelnyi@uni.li',  # Replace with your verified sender
+        from_email='nike24103@gmail.com',
         to_emails=to_email,
         subject='Your Memory Game Verification Code',
-        plain_text_content=f'Hi!\n\nYour verification code is: {code}\n\nThanks for registering.')
-
+        html_content=f'<strong>Your code is: {code}</strong>'
+    )
     try:
         sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-        sg.send(message)
-        print(f"Verification email sent to {to_email}")
+        response = sg.send(message)
+        print("STATUS:", response.status_code)
+        print("HEADERS:", response.headers)
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print("SENDGRID ERROR:", str(e))
+
+    # Optional: for debugging
+    print("API KEY present:", os.environ.get('SENDGRID_API_KEY') is not None)
 
 # Game helper functions
 def create_cards():
@@ -170,13 +174,13 @@ def save_score():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username')
+        password = request.form.get('password')
 
         # Only allow university email addresses
-        if not username.endswith('@gmail.com'):
+        if not username or not username.endswith('@gmail.com'):
             return render_template('signup.html',
-                                   error="Only university emails (@uni.li) are allowed.",
+                                   error="Only university emails (@gmail.com) are allowed.",
                                    suggestions=[],
                                    original_username=username)
 
@@ -212,8 +216,8 @@ def signup():
 @app.route('/verify', methods=['GET', 'POST'])
 def verify():
     if request.method == 'POST':
-        username = request.form['email']
-        entered_code = request.form['code']
+        username = request.form.get('email')
+        entered_code = request.form.get('code')
 
         verification = VerificationCode.query.filter_by(email=username).first()
         if verification:
@@ -221,14 +225,25 @@ def verify():
             password_hash = verification.password_hash
 
             if entered_code == correct_code:
+                print("Correct verification code entered.")
+                print("Creating user with:", username)
+
                 user = User(username=username, password_hash=password_hash)
                 db.session.add(user)
                 db.session.commit()
-                login_user(user)
+
+                print("User committed to DB:", user)
+
                 db.session.delete(verification)
                 db.session.commit()
+
+                login_user(user)
+                return redirect(url_for('index'))
+
             else:
                 return render_template('verify.html', email=username, error="Incorrect code.")
+        else:
+            return render_template('verify.html', email=username, error="No verification record found.")
     email = request.args.get('email', '')
     return render_template('verify.html', email=email)
 
@@ -384,3 +399,9 @@ print("API key present:", os.environ.get('SENDGRID_API_KEY') is not None)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
+
+with app.app_context():
+    users = User.query.all()
+    print("All users in database:")
+    for user in users:
+        print(f"- {user.username}")
