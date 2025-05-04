@@ -1,0 +1,13 @@
+# requirements.txt
+# List of Python packages required by the application.
+# Use 'pip install -r requirements.txt' to install them.
+
+Flask
+Flask-Login
+Flask-SQLAlchemy
+sendgrid
+python-dotenv
+
+# Note: Werkzeug is installed as a dependency of Flask.
+# You might need to pin specific versions based on your project's needs
+# (e.g., Flask==2.3.2). For now, this lets pip install the latest compatible versions.

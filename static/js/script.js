@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const timerElement = document.getElementById('timer');
 
     // Game state variables
-    let canFlip = false; // Controls whether cards can be flipped
+    let canFlip = false; // Controls if cards can be flipped, at the beggining they should not
     let preloadedImages = {};
     let gameStarted = false;
     let gameTimer = null;
@@ -76,113 +76,90 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Preloads card images before starting the game
-     */
-    function preloadCardImages() {
-        // Fetch image paths from server
-        fetch('/preload_images')
-            .then(response => response.json())
-            .then(data => {
-                const imagePaths = data.images;
-                const totalImages = imagePaths.length;
+    // function to preload cards images before starting the game TODO: check why still the first card takes longer
+function preloadCardImages() {
+    // Get all cards and preload their images before game starts
+    const cards = document.querySelectorAll('.card');
+    const imagesToLoad = [];
+    const uniqueImages = new Set();
 
-                // Create loading indicator
-                const gameContainer = document.querySelector('.game-container');
-                const loadingIndicator = document.createElement('div');
-                loadingIndicator.id = 'loading-indicator';
-                loadingIndicator.textContent = 'Preparing the game...';
-                loadingIndicator.style.textAlign = 'center';
-                loadingIndicator.style.margin = '10px 0';
-                loadingIndicator.style.color = '#3498db';
-                loadingIndicator.style.fontWeight = 'bold';
+    // Collect all unique image paths from card elements
+    cards.forEach(card => {
+        const imgElement = card.querySelector('.front img');
+        if (imgElement && imgElement.src && !uniqueImages.has(imgElement.src)) {
+            uniqueImages.add(imgElement.src);
+            imagesToLoad.push(imgElement.src);
+        }
+    });
 
-                // Add loading indicator before the start button
-                if (startGameButton && gameContainer) {
-                    const startGameContainer = startGameButton.closest('.start-game-container');
-                    if (startGameContainer) {
-                        gameContainer.insertBefore(loadingIndicator, startGameContainer);
-                    }
-                }
+    // Show loading status - delete maybe?
+    const loadingIndicator = document.getElementById('loading-indicator') ||
+        document.createElement('div');
+    loadingIndicator.id = 'loading-indicator';
+    loadingIndicator.textContent = 'Loading cards...';
+    loadingIndicator.style.textAlign = 'center';
+    loadingIndicator.style.margin = '10px 0';
+    loadingIndicator.style.color = '#3498db';
 
-                // Set start button to loading state
-                if (startGameButton) {
-                    startGameButton.disabled = true;
-                    startGameButton.style.opacity = '0.5';
-                    startGameButton.textContent = 'Loading images...';
-                }
-
-                // Preload each image
-                let imagesLoaded = 0;
-                imagePaths.forEach(path => {
-                    const img = new Image();
-
-                    img.onload = function() {
-                        imagesLoaded++;
-
-                        // Update loading indicator
-                        if (loadingIndicator) {
-                            loadingIndicator.textContent = `Loading cards (${imagesLoaded}/${totalImages})...`;
-                        }
-
-                        // When all images are loaded
-                        if (imagesLoaded >= totalImages) {
-                            console.log('All images preloaded successfully');
-
-                            // Remove loading indicator and enable start button
-                            if (loadingIndicator) loadingIndicator.remove();
-                            if (startGameButton) {
-                                startGameButton.disabled = false;
-                                startGameButton.style.opacity = '1';
-                                startGameButton.textContent = 'Start Game';
-                            }
-                        }
-                    };
-
-                    img.onerror = function() {
-                        console.error(`Failed to load image: ${path}`);
-                        imagesLoaded++; // Count failed loads to avoid hanging
-
-                        if (imagesLoaded >= totalImages) {
-                            if (loadingIndicator) loadingIndicator.remove();
-                            if (startGameButton) {
-                                startGameButton.disabled = false;
-                                startGameButton.style.opacity = '1';
-                                startGameButton.textContent = 'Start Game';
-                            }
-                        }
-                    };
-
-                    img.src = path;
-                });
-            })
-            .catch(error => {
-                console.error('Error loading image paths:', error);
-                // Handle failure gracefully
-                const loadingIndicator = document.getElementById('loading-indicator');
-                if (loadingIndicator) loadingIndicator.remove();
-
-                if (startGameButton) {
-                    startGameButton.disabled = false;
-                    startGameButton.style.opacity = '1';
-                    startGameButton.textContent = 'Start Game';
-                }
-            });
+    // Add or update loading indicator
+    if (!document.getElementById('loading-indicator')) {
+        const gameContainer = document.querySelector('.game-container');
+        const startGameContainer = document.querySelector('.start-game-container');
+        if (gameContainer && startGameContainer) {
+            gameContainer.insertBefore(loadingIndicator, startGameContainer);
+        }
     }
 
-    // Start preloading right away
+    // Update start button state after the loading is done
+    if (startGameButton) {
+        startGameButton.disabled = true;
+        startGameButton.textContent = 'Loading...';
+    }
+
+    // Load all images in parallel
+    let loaded = 0;
+    const totalImages = imagesToLoad.length;
+
+    // If there are no images to load, enable the start button immediately
+    if (totalImages === 0) {
+        if (loadingIndicator) loadingIndicator.remove();
+        if (startGameButton) {
+            startGameButton.disabled = false;
+            startGameButton.textContent = 'Start Game';
+        }
+        return;
+    }
+
+    // Preload each image adn adjust loading constant
+    imagesToLoad.forEach(src => {
+        const img = new Image();
+        img.onload = img.onerror = () => {
+            loaded++;
+            loadingIndicator.textContent = `Loading cards (${loaded}/${totalImages})...`;
+
+            // When all images are loaded
+            if (loaded >= totalImages) {
+                if (loadingIndicator) loadingIndicator.remove();
+                if (startGameButton) {
+                    startGameButton.disabled = false;
+                    startGameButton.textContent = 'Start Game';
+                }
+            }
+        };
+        img.src = src;
+    });
+}
+    // Start preloading right away after visiting page
     preloadCardImages();
 
-    /**
-     * Starts the game after images are loaded
-     */
+    // start the game after
     function startGame() {
         gameStarted = true;
-        canFlip = true; // Allow card flipping
+        canFlip = true; // Allow card flipping only now (implemented because of bug)
 
         startTimer();
 
-        // Update UI elements
+        // Update the UI elements accordingly
         if (startGameButton) startGameButton.style.display = 'none';
         if (memoryGame) memoryGame.style.visibility = 'visible';
         if (gameInfo) gameInfo.style.visibility = 'visible';
@@ -333,7 +310,6 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Score saved:', data);
 
         // Update the win message with score information
         const scoreElement = document.getElementById('final-score');

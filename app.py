@@ -9,7 +9,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from dotenv import load_dotenv
 
-# Application initialization
+# standard initialization of flask app
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.urandom(24)  # Secret key for session management
 
@@ -122,7 +122,7 @@ def calculate_score(moves, seconds_elapsed, total_pairs):
     base_score = 10000
 
     # Penalty per extra move (beyond minimum)
-    move_penalty = 50
+    move_penalty = 80
     extra_moves = max(0, moves - min_possible_moves)
     move_deduction = extra_moves * move_penalty
 
@@ -135,10 +135,19 @@ def calculate_score(moves, seconds_elapsed, total_pairs):
 
     return int(score)
 
+"""old calculation 
+def calculate_score_v2(moves, time, pairs):
+    base = 5000
+    move_penalty = moves * 30
+    time_penalty = time * 5
+    return max(100, base - move_penalty - time_penalty)
+
+"""
+
 @app.route('/save_score', methods=['POST'])
 @login_required
 def save_score():
-    """Save game score to user's record if it's a high score"""
+    #Save game score to user's record if it's a high score
 
     # Get game data from request
     data = request.json
