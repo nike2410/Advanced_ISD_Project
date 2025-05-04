@@ -74,25 +74,25 @@ def create_cards():
     """Create and shuffle memory game cards"""
     # Define card images
     card_symbols = [
-        f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9)
+        f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9) # go back to listing all pictures seperately if picture names change with real pictures
     ]
 
-    # Create pairs by duplicating each image
+    # Create pairs by duplicating each image and saving it in a list
     cards = []
     for image_path in card_symbols:
         cards.extend([image_path, image_path])
 
-    # Shuffle the cards
+    # randomly shuffle the list of cards
     random.shuffle(cards)
 
-    # Create card objects with necessary properties
+    # use list comprehension to give all 16 cards the needed properties
     card_objects = [
         {
             'id': i,
             'image_path': image_path,
-            'is_flipped': False,
+            'is_flipped': False, #those states will be changed when clicked / matched
             'is_matched': False
-        } for i, image_path in enumerate(cards)
+        } for i, image_path in enumerate(cards) #use enumerate to add an id (0 to 15) to the cards
     ]
     return card_objects
 
@@ -115,28 +115,27 @@ def start_new_game():
 
 
 def calculate_score(moves, seconds_elapsed, total_pairs):
-    # Minimum possible moves is equal to the number of pairs
+    # Minimum possible moves is equal to the number of pairs (right now 8, subject to change if we implement a hard mode)
     min_possible_moves = total_pairs
-
-    # Base score
     base_score = 10000
 
-    # Penalty per extra move (beyond minimum)
+    # Penalty per extra move (beyond the minimum)
     move_penalty = 80
     extra_moves = max(0, moves - min_possible_moves)
     move_deduction = extra_moves * move_penalty
 
-    # Time penalty (points per second)
+    # Time penalty (points deducted per second)
     time_penalty = 10
     time_deduction = seconds_elapsed * time_penalty
 
-    # Calculate final score (minimum score is 100)
     score = max(100, base_score - move_deduction - time_deduction)
 
-    return int(score)
+    return int(score) #int to make sure its a whole number
 
-"""old calculation 
-def calculate_score_v2(moves, time, pairs):
+#print(calculate_score(12, 24, 8))
+
+""" 
+def calculate_score(moves, seconds_elapsed):
     base = 5000
     move_penalty = moves * 30
     time_penalty = time * 5
@@ -145,19 +144,16 @@ def calculate_score_v2(moves, time, pairs):
 """
 
 @app.route('/save_score', methods=['POST'])
-@login_required
-def save_score():
-    #Save game score to user's record if it's a high score
+@login_required #make sure user is logged in
+def save_score(): #Save game score to user's record if it's a high score
 
-    # Get game data from request
+    # Get the game results from psot request
     data = request.json
-    moves = data.get('moves', 0)
-    seconds_elapsed = data.get('seconds', 0)
+    moves = data.get('moves')   # extract values from data
+    seconds_elapsed = data.get('seconds') #
 
     # Calculate score using our algorithm
     game_id = session.get('game_id')
-    if not game_id or f'game_{game_id}' not in session:
-        return jsonify({'error': 'No active game'}), 400
 
     game_state = session[f'game_{game_id}']
     total_pairs = game_state['total_pairs']
@@ -168,12 +164,12 @@ def save_score():
     user = current_user
     is_high_score = False
 
-    if score > user.high_score:
+    if score > user.high_score: # compare the current scrore to his best from the db
         user.high_score = score
         db.session.commit()
         is_high_score = True
 
-    return jsonify({
+    return jsonify({  #return response about the score to js as a json
         'score': score,
         'is_high_score': is_high_score,
         'high_score': user.high_score
@@ -283,7 +279,7 @@ def logout():
 # Game routes
 @app.route('/')
 @login_required
-def index():
+def index():   #check if we still need this? game gets started with the button now?
     """Main game page - start a new game"""
     game_id, game_state = start_new_game()
     session['game_id'] = game_id
@@ -298,43 +294,36 @@ def index():
 @login_required
 def new_game():
     """Create a new game session"""
-    game_id, game_state = start_new_game()
+    game_id, game_state = start_new_game() #calls function from above
     session['game_id'] = game_id
-    session[f'game_{game_id}'] = game_state
+    session[f'game_{game_id}'] = game_state #create unique key for each state (for now one)
     return redirect(url_for('index'))
 
 
 @app.route('/flip_card', methods=['POST'])
-@login_required
+@login_required #redirect to login page if user is not logged in
 def flip_card():
     """Handle card flip actions"""
     # Get current game from session
-    game_id = session.get('game_id')
-    if not game_id or f'game_{game_id}' not in session:
-        return jsonify({'error': 'No active game'}), 400
+    game_id = session.get('game_id') #get the gameid from the session
+    game_state = session[f'game_{game_id}'] #get the state by looking for the id in the session
 
-    game_state = session[f'game_{game_id}']
+    # Get card ID from the js request
+    card_id = int(request.form.get('card_id'))  #TODO: check if int is needed anymore?
 
-    # Get card ID from request
-    card_id = int(request.form.get('card_id', -1))
-    if card_id < 0 or card_id >= len(game_state['cards']):
-        return jsonify({'error': 'Invalid card ID'}), 400
-
-    # Get the card
+    # use the cardid to get the card
     card = game_state['cards'][card_id]
 
     # Check if card can be flipped
     if card['is_flipped'] or card['is_matched'] or game_state['game_completed']:
         return jsonify(game_state), 200
-
-    # Flip the card
-    card['is_flipped'] = True
+    card['is_flipped'] = True                # Flip the card and add to list
     game_state['flipped_cards'].append(card_id)
 
     # Process logic for two flipped cards
     result = {}
     if len(game_state['flipped_cards']) == 2:
-        game_state['moves'] += 1
+        game_state['moves'] = game_state['moves'] + 1
         first_card_id, second_card_id = game_state['flipped_cards']
         first_card = game_state['cards'][first_card_id]
         second_card = game_state['cards'][second_card_id]
@@ -347,7 +336,7 @@ def flip_card():
             game_state['matched_pairs'] += 1
             result['match_found'] = True
             result['matched_card_ids'] = [first_card_id, second_card_id]
-            game_state['flipped_cards'] = []
+            game_state['flipped_cards'] = []   #reset flipped cards list
 
             # Check if game is complete
             if game_state['matched_pairs'] >= game_state['total_pairs']:
@@ -361,7 +350,7 @@ def flip_card():
 
     # Update session and return response
     session[f'game_{game_id}'] = game_state
-    session.modified = True
+    session.modified = True       # used to make sure changes are registered by flask
 
     # Create response with game state and result data
     response_data = game_state.copy()
