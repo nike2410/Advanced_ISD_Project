@@ -175,6 +175,11 @@ def save_score(): #Save game score to user's record if it's a high score
         'high_score': user.high_score
     })
 
+@app.route('/leaderboard')
+def leaderboard():
+    top_users = User.query.order_by(User.high_score.desc()).limit(10).all()
+    return render_template('leaderboard.html', users=top_users)
+
 # Authentication routes
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -183,22 +188,23 @@ def signup():
         password = request.form.get('password')
 
         # Only allow university email addresses
-        if not username or not username.endswith('@gmail.com'):
+        if not username:
+            return render_template('signup.html',
+                                   error="Username is required.",
+                                   suggestions=[],
+                                   original_username="")
+        elif not username.strip().endswith('@gmail.com'):
             return render_template('signup.html',
                                    error="Only university emails (@gmail.com) are allowed.",
                                    suggestions=[],
                                    original_username=username)
+            return render_template('signup.html',
+                                   error="Only university emails (@gmail.com) are allowed.",
+                                   suggestions=[],
+                                   original_username=username)
+        print("Passed email check, sending code to:", username)
 
         existing_user = User.query.filter_by(username=username).first()
-        if existing_user:
-            suggestions = [
-                f"{username.split('@')[0]}{random.randint(1, 100)}@uni.li",
-                f"{username.split('@')[0]}_{random.randint(100, 999)}@uni.li"
-            ]
-            return render_template('signup.html',
-                                   error="Username already exists!",
-                                   suggestions=suggestions,
-                                   original_username=username)
 
         # Generate verification code
         code = str(random.randint(100000, 999999))
@@ -242,8 +248,7 @@ def verify():
                 db.session.delete(verification)
                 db.session.commit()
 
-                login_user(user)
-                return redirect(url_for('index'))
+                return redirect(url_for('login', verified='true'))
 
             else:
                 return render_template('verify.html', email=username, error="Incorrect code.")
@@ -254,6 +259,7 @@ def verify():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    verified = request.args.get('verified')
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -266,8 +272,7 @@ def login():
         return 'Invalid username or password'
 
     # GET request - display login form
-    return render_template('login.html')
-
+    return render_template('login.html', verified=verified)
 
 @app.route('/logout')
 @login_required

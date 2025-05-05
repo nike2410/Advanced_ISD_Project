@@ -15,7 +15,7 @@
 
     <p>We've sent a verification code to <strong>{{ email }}</strong>. Please enter it below:</p>
 
-    <form method="post">
+    <form method="post" action="{{ url_for('verify') }}">
         <input type="hidden" name="email" value="{{ email }}">
         <input type="text" name="code" placeholder="6-digit code" required>
         <button type="submit">Verify</button>

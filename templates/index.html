@@ -20,6 +20,13 @@
         </a>
     </div>
 
+    <!-- Link to the leaderboard page -->
+    <div class="controls">
+        <a href="{{ url_for('leaderboard') }}">
+            <button type="button">🏆 View Leaderboard</button>
+        </a>
+    </div>
+
     <div class="game-info" id="game-info" style = "visibility: hidden;">
         <!-- section for game info-->
         <div class="stats">Moves: <span id="moves">{{ game_state.moves }}</span></div>
