@@ -13,9 +13,6 @@ from dotenv import load_dotenv
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.urandom(24)  # Secret key for session management
 
-#getting the API Key for verification process
-load_dotenv("sendgrid.env")
-
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -53,21 +50,18 @@ def load_user(user_id):
 
 def send_verification_email(to_email, code):
     message = Mail(
-        from_email='nike24103@gmail.com',
+        from_email='mykola.subtelnyi@uni.li',
         to_emails=to_email,
         subject='Your Memory Game Verification Code',
         html_content=f'<strong>Your code is: {code}</strong>'
     )
     try:
-        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        sg = SendGridAPIClient("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")
         response = sg.send(message)
         print("STATUS:", response.status_code)
         print("HEADERS:", response.headers)
     except Exception as e:
         print("SENDGRID ERROR:", str(e))
-
-    # Optional: for debugging
-    print("API KEY present:", os.environ.get('SENDGRID_API_KEY') is not None)
 
 # Game helper functions
 def create_cards():
