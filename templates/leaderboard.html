@@ -2,29 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Leaderboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced ISD Project</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="icon" href="/static/images/favicon_TriMy.ico" type="image/x-icon">
 </head>
 <body>
-    <h2>Top 10 Players</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Rank</th>
-                <th>Username</th>
-                <th>High Score</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.high_score }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <p><a href="/">Back to Game</a></p>
+
+    <div class="leaderboard-container">
+        <h2 class="leaderboard-title">Top 10 Players</h2>
+
+        {% if users %}
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Username</th>
+                        <th>High Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr class="{% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">
+                            <td>{{ loop.index }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.high_score }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+
+    <!-- create link to back to main page -->
+    <div class="controls">
+        <a href="/">
+            <button type="submit">Back to menu</button>
+        </a>
+    </div>
 </body>
 </html>
