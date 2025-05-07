@@ -25,9 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (restartButtonContainer) restartButtonContainer.style.display = 'none';
 
     /**
-     * Formats seconds to MM:SS or HH:MM:SS format
-     * @param {number} totalSeconds - Seconds to format
-     * @return {string} Formatted time string
+     * Formats seconds to MM:SS or HH:MM:SS format in the frontend
+     *
      */
     function formatTime(totalSeconds) {
         const hours = totalSeconds / 3600;
@@ -46,12 +45,12 @@ document.addEventListener('DOMContentLoaded', function() {
      * Starts the game timer
      */
     function startTimer() {
-        if (gameTimer) clearInterval(gameTimer);
+        if (gameTimer) clearInterval(gameTimer); // clear any existing timer
 
         secondsElapsed = 0;
-        updateTimerDisplay();
+        updateTimerDisplay(); //call to show initial time
 
-        gameTimer = setInterval(function() {
+        gameTimer = setInterval(function() { //define when 1 second should be added to the timer - in milliseconds
             secondsElapsed++;
             updateTimerDisplay();
         }, 1000);
@@ -62,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function updateTimerDisplay() {
         if (timerElement) {
-            timerElement.textContent = formatTime(secondsElapsed);
+            timerElement.textContent = formatTime(secondsElapsed); //update the element and format the time
         }
     }
 
@@ -71,23 +70,23 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function stopTimer() {
         if (gameTimer) {
-            clearInterval(gameTimer);
+            clearInterval(gameTimer); // see above
             gameTimer = null;
         }
     }
 
-    // function to preload cards images before starting the game TODO: check why still the first card takes longer
+    // function to preload cards images before starting the game TODO: check why still the first card takes longer (maybe cache?)
 function preloadCardImages() {
-    // Get all cards and preload their images before game starts
-    const cards = document.querySelectorAll('.card');
-    const imagesToLoad = [];
-    const uniqueImages = new Set();
+
+    const cards = document.querySelectorAll('.card');   //get all html elements with the class "card" (should be all cards)
+    const imagesToLoad = [];                                                // will be used below to store image source (path)
+    const uniqueImages = new Set();                                     //used set instead of array make sure every image is only loaded once
 
     // Collect all unique image paths from card elements
     cards.forEach(card => {
-        const imgElement = card.querySelector('.front img');
-        if (imgElement && imgElement.src && !uniqueImages.has(imgElement.src)) {
-            uniqueImages.add(imgElement.src);
+        const imgElement = card.querySelector('.front img');            //extract from the front of the card
+        if (imgElement && !uniqueImages.has(imgElement.src)) {                  //check if an image was found and if it was already added
+            uniqueImages.add(imgElement.src);                                   //add source to set and to array
             imagesToLoad.push(imgElement.src);
         }
     });
