@@ -70,14 +70,18 @@ def create_cards():
     # card_symbols = [
     #     f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9) # go back to listing all pictures seperately if picture names change with real pictures
     # ]
-    image_folder = 'static/images/Photos'
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    image_folder = os.path.join(BASE_DIR, 'static', 'images', 'Photos')
+
+    if not os.path.isdir(image_folder):
+        raise FileNotFoundError(f"Folder not found: {image_folder}")
     all_images = [f for f in os.listdir(image_folder) if f.lower().endswith('.jpg')] #read the whole folder and store picture in .jpg format
     selected_images = random.sample(all_images, 8) #select randon 8 pictures
 
     # Create pairs by duplicating each image and saving it in a list
     cards = []
     for image in selected_images:
-        image_path = os.path.join(image_folder, image) #get the path of every selected picture and double it
+        image_path = os.path.join('static', 'images', 'Photos', image) #get the path of every selected picture and double it
         cards.extend([image_path, image_path])
 
     # randomly shuffle the list of cards
