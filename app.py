@@ -50,13 +50,13 @@ def load_user(user_id):
 
 def send_verification_email(to_email, code):
     message = Mail(
-        from_email='mykola.subtelnyi@uni.li',
+        from_email='trimygame@outlook.com',
         to_emails=to_email,
         subject='Your Memory Game Verification Code',
         html_content=f'<strong>Your code is: {code}</strong>'
     )
     try:
-        sg = SendGridAPIClient("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")
+        sg = SendGridAPIClient("INSERT THE API")
         response = sg.send(message)
         print("STATUS:", response.status_code)
         print("HEADERS:", response.headers)
@@ -67,13 +67,17 @@ def send_verification_email(to_email, code):
 def create_cards():
     """Create and shuffle memory game cards"""
     # Define card images
-    card_symbols = [
-        f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9) # go back to listing all pictures seperately if picture names change with real pictures
-    ]
+    # card_symbols = [
+    #     f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9) # go back to listing all pictures seperately if picture names change with real pictures
+    # ]
+    image_folder = 'static/images/Photos'
+    all_images = [f for f in os.listdir(image_folder) if f.lower().endswith('.jpg')] #read the whole folder and store picture in .jpg format
+    selected_images = random.sample(all_images, 8) #select randon 8 pictures
 
     # Create pairs by duplicating each image and saving it in a list
     cards = []
-    for image_path in card_symbols:
+    for image in selected_images:
+        image_path = os.path.join(image_folder, image) #get the path of every selected picture and double it
         cards.extend([image_path, image_path])
 
     # randomly shuffle the list of cards
@@ -189,11 +193,11 @@ def signup():
                                    original_username="")
         elif not username.strip().endswith('@gmail.com'):
             return render_template('signup.html',
-                                   error="Only university emails (@gmail.com) are allowed.",
+                                   error="Only Google emails (@gmail.com) are allowed.",
                                    suggestions=[],
                                    original_username=username)
             return render_template('signup.html',
-                                   error="Only university emails (@gmail.com) are allowed.",
+                                   error="Only Google emails (@gmail.com) are allowed.",
                                    suggestions=[],
                                    original_username=username)
         print("Passed email check, sending code to:", username)
@@ -391,8 +395,6 @@ def preload_images():
 # Create database tables on application startup
 with app.app_context():
     db.create_all()
-
-print("API key present:", os.environ.get('SENDGRID_API_KEY') is not None)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
