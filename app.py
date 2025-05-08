@@ -19,7 +19,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Game constants
-TOTAL_PAIRS = 8  # Number of card pairs for the game
+total_pairs = 8  # Number of card pairs for the game
 
 # User model definition
 class User(UserMixin, db.Model):
@@ -99,6 +99,19 @@ def create_cards():
     return card_objects
 
 
+def cleanup_old_sessions(session, max_sessions=3):          #try to solve 502 error
+    game_keys = [key for key in list(session.keys()) if key.startswith('game_')]        # Get all keys that start with 'game_'
+
+    if len(game_keys) > max_sessions:
+        game_keys.sort()
+
+        # Remove the oldest sessions, keeping only max_sessions
+        sessions_to_remove = game_keys[:-max_sessions]
+        for key in sessions_to_remove:
+            session.pop(key, None)
+        session.modified = True #save changes
+
+
 def start_new_game():
     """Initialize a new game session"""
     # Generate unique game ID
@@ -107,12 +120,13 @@ def start_new_game():
     # Set up initial game state
     game_state = {
         'cards': create_cards(),
-        'total_pairs': TOTAL_PAIRS,
+        'total_pairs': total_pairs,
         'flipped_cards': [],
         'matched_pairs': 0,
         'moves': 0,
         'game_completed': False
     }
+    cleanup_old_sessions(session)               # Clean up old sessions before adding a new one
     return game_id, game_state
 
 
