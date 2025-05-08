@@ -3,42 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced ISD Project</title>
+    <title>TriMy Leaderboard</title>
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="icon" href="/static/images/favicon_TriMy.ico" type="image/x-icon">
 </head>
 <body>
 
-    <div class="leaderboard-container">
-        <h2 class="leaderboard-title">Top 10 Players</h2>
+<div class="leaderboard-container">
+    <h2 class="leaderboard-title">Leaderboard: {{ pair_count }} Pairs</h2>
 
-        {% if users %}
-            <table class="leaderboard-table">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Username</th>
-                        <th>High Score</th>
+    {% if scores %}
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Username</th>
+                    <th>Score</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in scores %}
+                    <tr class="{% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">
+                        <td>{{ loop.index }}</td>
+                        <td>{{ entry.user.username }}</td>
+                        <td>{{ entry.score }}</td>
+                        <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                        <tr class="{% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">
-                            <td>{{ loop.index }}</td>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.high_score }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endif %}
-    </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No scores submitted yet for this mode.</p>
+    {% endif %}
 
-    <!-- create link to back to main page -->
     <div class="controls">
-        <a href="/">
-            <button type="submit">Back to menu</button>
+        <a href="{{ url_for('index') }}">
+            <button>Back to Menu</button>
         </a>
     </div>
+</div>
+
 </body>
 </html>

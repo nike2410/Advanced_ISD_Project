@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TriMy Game</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="icon" href="/static/images/favicon_TriMy.ico" type="image/x-icon">
+</head>
+
+<body>
+    <h1>Memory Game</h1>
+
+    <!-- section for game info-->
+    <div class="game-info" id="game-info" style = "visibility: hidden;">
+        <div class="stats">Moves: <span id="moves">{{ game_state.moves }}</span></div>
+        <div class="stats">Time: <span id="timer">00:00</span></div>
+        <div class="stats">Pairs found: <span id="matches">{{ game_state.matched_pairs }}</span> / <span id="total-pairs">{{ game_state.total_pairs }}</span></div>
+        <div class="stats">Your high score: <span id="user-high-score">{{ current_user.high_score }}</span></div>
+    </div>
+
+    <div class="game-container">
+
+        <!-- Memory game board -->
+        <div class="memory-game" id="memory-game" style = "visibility: hidden;" data-size="{{ game_state.total_pairs }}">
+            {% for card in game_state.cards %}
+            <div class="card {% if card.is_flipped %}flipped{% endif %} {% if card.is_matched %}matched{% endif %}" data-id="{{ card.id }}">
+                <div class="front">
+                    <img src="{{ card.image_path }}" alt="Card Image">
+                </div>
+                <div class="back"></div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- message after game completion-->
+        <div class="win-message" id="win-message" {% if game_state.game_completed %}style="display:block;"{% endif %}>
+            Congratulations! You've completed the game!<br>
+            Total moves needed: <span id="final-moves">{{ game_state.moves }}</span><br>
+            Time taken: <span id="final-time">00:00</span><br>
+            Your score: <span id="final-score">0</span> points<br>
+        <div id="high-score-message" style="display:none; color:#ff9900; font-weight:bold; margin-top:10px;"></div>
+        </div>
+
+        <!-- restart button -->
+        <div class="controls" id="restart-button-container">
+            <form method="POST" action="{{ url_for('new_game') }}" id="restart-form">
+                <button type="submit">Restart Game</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- finish game button -->
+    <div class="controls" id="finish-button-container">
+        <form method="GET" action="{{ url_for('index') }}">
+            <button type="submit">Finish Game</button>
+        </form>
+    </div>
+
+    <!-- logout button -->
+    <div class="controls" id="logout-button-container">
+        <a href="{{ url_for('logout') }}">
+            <button>Logout</button>
+        </a>
+    </div>
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

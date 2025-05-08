@@ -18,15 +18,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Game constants
-TOTAL_PAIRS = 8  # Number of card pairs for the game
+# # Game constants
+# TOTAL_PAIRS = 8  # Number of card pairs for the game
+
+allowed_pair_counts = {8, 10, 12} #these numbers of pairs that are allowed
 
 # User model definition
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(150), nullable=False)
-    high_score = db.Column(db.Integer, default=0)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -37,6 +38,13 @@ class VerificationCode(db.Model):
     code = db.Column(db.String(6), nullable=False)
     password_hash = db.Column(db.String(150), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+class Score(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    score = db.Column(db.Integer, nullable=False)
+    pair_count = db.Column(db.Integer, nullable=False)
+    user = db.relationship('User', backref='scores')
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -64,7 +72,7 @@ def send_verification_email(to_email, code):
         print("SENDGRID ERROR:", str(e))
 
 # Game helper functions
-def create_cards():
+def create_cards(pair_count):
     """Create and shuffle memory game cards"""
     # Define card images
     # card_symbols = [
@@ -76,7 +84,7 @@ def create_cards():
     if not os.path.isdir(image_folder):
         raise FileNotFoundError(f"Folder not found: {image_folder}")
     all_images = [f for f in os.listdir(image_folder) if f.lower().endswith('.jpg')] #read the whole folder and store picture in .jpg format
-    selected_images = random.sample(all_images, 8) #select randon 8 pictures
+    selected_images = random.sample(all_images, pair_count) #select randon 8 pictures
 
     # Create pairs by duplicating each image and saving it in a list
     cards = []
@@ -99,15 +107,15 @@ def create_cards():
     return card_objects
 
 
-def start_new_game():
+def start_new_game(pair_count):
     """Initialize a new game session"""
     # Generate unique game ID
     game_id = str(uuid.uuid4())
 
     # Set up initial game state
     game_state = {
-        'cards': create_cards(),
-        'total_pairs': TOTAL_PAIRS,
+        'cards': create_cards(pair_count),
+        'total_pairs': pair_count,
         'flipped_cards': [],
         'matched_pairs': 0,
         'moves': 0,
@@ -127,7 +135,7 @@ def calculate_score(moves, seconds_elapsed, total_pairs):
     move_deduction = extra_moves * move_penalty
 
     # Time penalty (points deducted per second)
-    time_penalty = 10
+    time_penalty = 5
     time_deduction = seconds_elapsed * time_penalty
 
     score = max(100, base_score - move_deduction - time_deduction)
@@ -166,10 +174,9 @@ def save_score(): #Save game score to user's record if it's a high score
     user = current_user
     is_high_score = False
 
-    if score > user.high_score: # compare the current scrore to his best from the db
-        user.high_score = score
-        db.session.commit()
-        is_high_score = True
+    new_score = Score(user_id=user.id, score=score, pair_count=total_pairs)
+    db.session.add(new_score)
+    db.session.commit()
 
     return jsonify({  #return response about the score to js as a json
         'score': score,
@@ -177,10 +184,23 @@ def save_score(): #Save game score to user's record if it's a high score
         'high_score': user.high_score
     })
 
-@app.route('/leaderboard')
-def leaderboard():
-    top_users = User.query.order_by(User.high_score.desc()).limit(10).all()
-    return render_template('leaderboard.html', users=top_users)
+@app.route('/leaderboard/<int:pair_count>')
+def leaderboard_by_mode(pair_count):
+    if pair_count not in allowed_pair_counts:
+        return "Invalid game mode", 400
+
+    # Fetch top 10 scores for this mode, joining user info
+    top_scores = (
+        Score.query
+        .filter_by(pair_count=pair_count)
+        .order_by(Score.score.desc())
+        .limit(10)
+        .all()
+    )
+
+    return render_template('leaderboard.html',
+                           scores=top_scores,
+                           pair_count=pair_count)
 
 # Authentication routes
 @app.route('/signup', methods=['GET', 'POST'])
@@ -282,16 +302,30 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-
 # Game routes
 @app.route('/')
 @login_required
-def index():   #check if we still need this? game gets started with the button now?
-    """Main game page - start a new game"""
-    game_id, game_state = start_new_game()
+def index():
+    return render_template('index.html',
+                           username=current_user.username,
+                           allowed_pair_counts=sorted(allowed_pair_counts))
+
+@app.route('/start_game', methods=['POST'])
+@login_required
+def start_game():
+    try:
+        pair_count = int(request.form.get('pair_count', 8))
+    except (TypeError, ValueError):
+        return "Invalid input", 400
+
+    if pair_count not in allowed_pair_counts:
+        return "Invalid number of pairs", 400
+
+    game_id, game_state = start_new_game(pair_count)
     session['game_id'] = game_id
     session[f'game_{game_id}'] = game_state
-    return render_template('index.html',
+    session['pair_count'] = pair_count
+    return render_template('game.html',
                            game_id=game_id,
                            game_state=game_state,
                            username=current_user.username)
@@ -301,7 +335,8 @@ def index():   #check if we still need this? game gets started with the button n
 @login_required
 def new_game():
     """Create a new game session"""
-    game_id, game_state = start_new_game() #calls function from above
+    pair_count = session.get('pair_count', 8)
+    game_id, game_state = start_new_game(pair_count) #calls function from above
     session['game_id'] = game_id
     session[f'game_{game_id}'] = game_state #create unique key for each state (for now one)
     return redirect(url_for('index'))
@@ -390,10 +425,13 @@ def reset_flipped_cards():
 @login_required
 def preload_images():
     """Return paths of card images for preloading"""
-    card_symbols = [
-        f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9)
-    ]
-    return jsonify(images=card_symbols)
+    image_folder = os.path.join('static','images','Photos')
+    all_images = [f for f in os.listdir(image_folder) if f.lower().endswith('.jpg')]
+    image_paths = [os.path.join(image_folder,image) for image in all_images]
+    # card_symbols = [
+    #     f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9)
+    # ]
+    return jsonify(images=image_paths)
 
 
 # Create database tables on application startup

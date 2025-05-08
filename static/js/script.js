@@ -22,6 +22,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial UI setup
     if (memoryGame) memoryGame.style.visibility = 'hidden';
     if (gameInfo) gameInfo.style.visibility = 'hidden';
+    if (window.location.pathname === '/start_game' || document.querySelector('.memory-game')) {
+        if (memoryGame) memoryGame.style.visibility = 'visible';
+        if (gameInfo) gameInfo.style.visibility = 'visible';
+        if (restartButtonContainer) restartButtonContainer.style.display = 'block';
+
+        gameStarted = true;
+        canFlip = true;
+        startTimer();
+    }
     if (restartButtonContainer) restartButtonContainer.style.display = 'none';
 
     /**

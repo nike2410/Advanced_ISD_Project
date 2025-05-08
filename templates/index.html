@@ -9,72 +9,30 @@
 </head>
 
 <body>
-    <h1>Welcome to the memory game of TriMy!</h1>
-    <p>You will be rewarded points based on the time needed and the amount of moves needed to find all eight pairs</p>
+    <div class="center-container">
+        <h1>Welcome to the memory game of TriMy!</h1>
+        <p>Select the number of pairs and start playing.</p>
 
-    <!-- create link to statistics page, leaderboard will be shown here
-    <div class="controls">
-        <a href="/static/statistics.html">
-            <button type="submit">View Statistics</button>
-        </a>
-    </div> -->
+        <form method="POST" action="{{ url_for('start_game') }}">
+            <label for="pair_count">Choose number of pairs:</label>
+            <select name="pair_count" required>
+                {% for count in allowed_pair_counts %}
+                    <option value="{{ count }}">{{ count }} pairs</option>
+                {% endfor %}
+            </select>
+            <br><br>
+            <button type="submit" class="action-button">Start Game</button>
+        </form>
 
-    <!-- Link to the leaderboard page -->
-    <div class="controls">
-        <a href="{{ url_for('leaderboard') }}">
-            <button type="submit">View Leaderboard</button>
-        </a>
-    </div>
-
-    <div class="game-info" id="game-info" style = "visibility: hidden;">
-        <!-- section for game info-->
-        <div class="stats">Moves: <span id="moves">{{ game_state.moves }}</span></div>
-        <div class="stats">Time: <span id="timer">00:00</span></div>
-        <div class="stats">Pairs found: <span id="matches">{{ game_state.matched_pairs }}</span> / <span id="total-pairs">{{ game_state.total_pairs }}</span></div>
-        <div class="stats">Your high score: <span id="user-high-score">{{ current_user.high_score }}</span></div>
-    </div>
-
-    <div class="game-container">
-        <!-- Start Game Button -->
-        <div class="controls start-game-container">
-            <button id="start-game-button" disabled>Loading...</button>
-        </div>
-
-        <!-- Memory game board -->
-        <div class="memory-game" id="memory-game" style = "visibility: hidden;">
-            {% for card in game_state.cards %}
-            <div class="card {% if card.is_flipped %}flipped{% endif %} {% if card.is_matched %}matched{% endif %}" data-id="{{ card.id }}">
-                <div class="front">
-                    <img src="{{ card.image_path }}" alt="Card Image">
-                </div>
-                <div class="back"></div>
-            </div>
+        <br>
+        <div class="controls">
+            <p>View Leaderboard by Mode:</p>
+            {% for count in allowed_pair_counts %}
+            <a href="{{ url_for('leaderboard_by_mode', pair_count=count) }}">
+                <button>{{ count }} Pairs</button>
+            </a>
             {% endfor %}
         </div>
-
-        <!-- message after game completion-->
-        <div class="win-message" id="win-message" {% if game_state.game_completed %}style="display:block;"{% endif %}>
-            Congratulations! You've completed the game!<br>
-            Total moves needed: <span id="final-moves">{{ game_state.moves }}</span><br>
-            Time taken: <span id="final-time">00:00</span><br>
-            Your score: <span id="final-score">0</span> points<br>
-        <div id="high-score-message" style="display:none; color:#ff9900; font-weight:bold; margin-top:10px;"></div>
     </div>
-
-        <!-- restart button -->
-        <div class="controls" id="restart-button-container">
-            <form method="POST" action="{{ url_for('new_game') }}" id="restart-form">
-                <button type="submit">Restart Game</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- logout button -->
-    <div class="controls" id="logout-button-container">
-        <a href="{{ url_for('logout') }}">
-            <button>Logout</button>
-        </a>
-    </div>
-    <script src="/static/js/script.js"></script>
 </body>
 </html>
