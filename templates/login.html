@@ -8,16 +8,27 @@
     <link rel="icon" href="/static/images/favicon_TriMy.ico" type="image/x-icon">
 </head>
 
-<h2>Please enter your gmail.com credentials</h2>
-<h2>Your email is your username</h2>
-{% if verified %}
-    <p style="color: green;">Your email has been verified successfully! Please log in.</p>
-{% endif %}
-<form method="post">
-    <input type="text" name="username" placeholder="Username" required><br>
-    <input type="password" name="password" placeholder="Password" required><br>
-    <div class="controls" id="login-button-container">
-        <button type="submit">Login</button>
+<body>
+    <div class="auth-form-container">
+        <h2>Login</h2>
+
+        {% if verified %}
+            <div class="auth-message">
+                Your email has been verified successfully! Please log in.
+            </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            <input type="email" name="username" placeholder="Gmail address" required> <!-- type email instead of text to check if @ is entered -->
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+        <div class="controls">
+            <p>Don't have an account?</p>
+            <a href="/signup">
+                <button type="submit">Sign-up here</button>
+            </a>
+        </div>
     </div>
-</form>
-<p>Don't have an account? <a href="/signup">Sign up here</a></p>
+</body>
+</html>
