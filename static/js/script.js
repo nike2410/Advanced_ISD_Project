@@ -24,10 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (gameInfo) gameInfo.style.visibility = 'hidden';
     if (restartButtonContainer) restartButtonContainer.style.display = 'none';
 
-    /**
-     * Formats seconds to MM:SS or HH:MM:SS format in the frontend
-     *
-     */
+    /*Formats seconds to MM:SS or HH:MM:SS format in the frontend */
     function formatTime(totalSeconds) {
         const hours = totalSeconds / 3600;
         const minutes = Math.floor(totalSeconds / 60) % 60;
@@ -41,9 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Starts the game timer
-     */
+    /* Starts the game timer   */
     function startTimer() {
         if (gameTimer) clearInterval(gameTimer); // clear any existing timer
 
@@ -56,18 +51,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 
-    /**
-     * Updates the timer display with the current elapsed time
-     */
+    /* Updates the timer display with the current elapsed time  */
     function updateTimerDisplay() {
         if (timerElement) {
             timerElement.textContent = formatTime(secondsElapsed); //update the element and format the time
         }
     }
 
-    /**
-     * Stops the game timer
-     */
+     //Stops the game timer
     function stopTimer() {
         if (gameTimer) {
             clearInterval(gameTimer); // see above
@@ -75,24 +66,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // function to preload cards images before starting the game TODO: check why still the first card takes longer (maybe cache?)
+    // function to preload all pictures before starting the game TODO: check why still the first card takes longer (maybe cache?)
 function preloadCardImages() {
 
-    const cards = document.querySelectorAll('.card');   //get all html elements with the class "card" (should be all cards)
-    const imagesToLoad = [];                                                // will be used below to store image source (path)
-    const uniqueImages = new Set();                                     //used set instead of array make sure every image is only loaded once
+    const cards = document.querySelectorAll('.card');   //get the cards, create set and array
+    const imagesToLoad = [];
+    const uniqueImages = new Set();
 
-    // Collect all unique image paths from card elements
     cards.forEach(card => {
-        const imgElement = card.querySelector('.front img');            //extract from the front of the card
-        if (imgElement && !uniqueImages.has(imgElement.src)) {                  //check if an image was found and if it was already added
-            uniqueImages.add(imgElement.src);                                   //add source to set and to array
+        const imgElement = card.querySelector('.front img');            //get image, add it to set and array
+        if (imgElement && !uniqueImages.has(imgElement.src)) {
+            uniqueImages.add(imgElement.src);
             imagesToLoad.push(imgElement.src);
         }
     });
 
     // Show loading status - delete maybe?
-    const loadingIndicator = document.getElementById('loading-indicator') ||
+    const loadingIndicator = document.getElementById('loading-indicator') || //put styling to css?
         document.createElement('div');
     loadingIndicator.id = 'loading-indicator';
     loadingIndicator.textContent = 'Loading cards...';
@@ -148,7 +138,7 @@ function preloadCardImages() {
         img.src = src;
     });
 }
-    // Start preloading right away after visiting page
+    // Start preloading right away after script is loaded
     preloadCardImages();
 
     // start the game after
@@ -163,8 +153,6 @@ function preloadCardImages() {
         if (memoryGame) memoryGame.style.visibility = 'visible';
         if (gameInfo) gameInfo.style.visibility = 'visible';
         if (restartButtonContainer) restartButtonContainer.style.display = 'block';
-
-        console.log('Game started!');
     }
 
     // Start game button click handler
@@ -172,12 +160,8 @@ function preloadCardImages() {
         startGameButton.addEventListener('click', startGame);
     }
 
-    /**
-     * Flips a card via AJAX request
-     * @param {string} cardId - ID of the card to flip
-     */
+    /* makes AJAX request and flips a card  */
     function flipCard(cardId) {
-        console.log(`Sending flip request for card: ${cardId}`);
 
         // Create form data
         const formData = new FormData();
@@ -188,19 +172,17 @@ function preloadCardImages() {
             method: 'POST',
             body: formData
         })
+
         .then(response => {
-            console.log('Response received:', response);
-            if (!response.ok) {
-                throw new Error('Server responded with an error');
-            }
             return response.json();
         })
+
         .then(data => {
-            console.log('Data received:', data);
+
             // Update UI based on response
             updateGameUI(data);
 
-            // Handle non-matching cards
+            // Handle case of non-matching cards
             if (data.no_match && data.cards_to_flip_back) {
                 console.log('No match found, will flip cards back');
                 canFlip = false;
@@ -228,18 +210,14 @@ function preloadCardImages() {
                         console.error('Error resetting cards:', error);
                         canFlip = true; // Ensure we don't lock the game if reset fails
                     });
-                }, 1000);
+                }, 900);                //adjust if game feels too slow
             }
         })
         .catch(error => console.error('Error:', error));
     }
 
-    /**
-     * Updates game UI based on server response
-     * @param {Object} game_state - Current game state from server
-     */
+    /* Updates game UI based on server response     */
     function updateGameUI(game_state) {
-        console.log('Updating game UI with:', game_state);
 
         // Update stats counters
         if (movesElement && game_state.moves !== undefined) {
@@ -266,7 +244,6 @@ function preloadCardImages() {
             game_state.cards.forEach(card => {
                 const cardElement = document.querySelector(`.card[data-id="${card.id}"]`);
                 if (!cardElement) {
-                    console.error(`Card element with ID ${card.id} not found`);
                     return;
                 }
 
@@ -283,7 +260,6 @@ function preloadCardImages() {
 
         // Handle game completion
         if (game_state.game_completed) {
-            console.log('Game completed!');
 
             stopTimer();
 
@@ -327,8 +303,7 @@ function preloadCardImages() {
                 highScoreMessage.textContent = `Your high score: ${data.high_score}`;
             }
         }
-    })
-    .catch(error => console.error('Error saving score:', error));
+    });
 }
 
     // Add click event listeners for cards
@@ -340,7 +315,6 @@ function preloadCardImages() {
                 return;
             }
             const cardId = this.dataset.id;
-            console.log(`Clicked card with ID: ${cardId}`);
             flipCard(cardId);
         });
     });
@@ -362,8 +336,7 @@ function preloadCardImages() {
                     if (response.redirected) {
                         window.location.href = response.url;
                     }
-                })
-                .catch(error => console.error('Error restarting game:', error));
+                });
             });
         }
     }

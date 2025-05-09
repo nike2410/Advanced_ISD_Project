@@ -65,11 +65,7 @@ def send_verification_email(to_email, code):
 
 # Game helper functions
 def create_cards():
-    """Create and shuffle memory game cards"""
-    # Define card images
-    # card_symbols = [
-    #     f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9) # go back to listing all pictures seperately if picture names change with real pictures
-    # ]
+    #Create and shuffle memory game cards
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     image_folder = os.path.join(BASE_DIR, 'static', 'images', 'Photos')
 
@@ -113,7 +109,7 @@ def cleanup_old_sessions(session, max_sessions=3):          #try to solve 502 er
 
 
 def start_new_game():
-    """Initialize a new game session"""
+    #initialize a new game session
     # Generate unique game ID
     game_id = str(uuid.uuid4())
 
@@ -301,7 +297,7 @@ def logout():
 @app.route('/')
 @login_required
 def index():   #check if we still need this? game gets started with the button now?
-    """Main game page - start a new game"""
+    #Main game page - start a new game
     game_id, game_state = start_new_game()
     session['game_id'] = game_id
     session[f'game_{game_id}'] = game_state
@@ -314,7 +310,7 @@ def index():   #check if we still need this? game gets started with the button n
 @app.route('/new_game', methods=['POST'])
 @login_required
 def new_game():
-    """Create a new game session"""
+    #Create a new game session
     game_id, game_state = start_new_game() #calls function from above
     session['game_id'] = game_id
     session[f'game_{game_id}'] = game_state #create unique key for each state (for now one)
@@ -382,7 +378,7 @@ def flip_card():
 @app.route('/reset_flipped_cards', methods=['POST'])
 @login_required
 def reset_flipped_cards():
-    """Reset cards that don't match back to unflipped state"""
+    #Reset cards that don't match back to unflipped state
     game_id = session.get('game_id')
     if not game_id or f'game_{game_id}' not in session:
         return jsonify({'error': 'No active game'}), 400
@@ -403,7 +399,7 @@ def reset_flipped_cards():
 @app.route('/preload_images')
 @login_required
 def preload_images():
-    """Return paths of card images for preloading"""
+    #Return paths of card images for preloading
     card_symbols = [
         f'static/images/card_pictures/card_picture_{i}.jpg' for i in range(1, 9)
     ]
@@ -417,6 +413,7 @@ with app.app_context():
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
 
+# still needed? maybe delete
 with app.app_context():
     users = User.query.all()
     print("All users in database:")
